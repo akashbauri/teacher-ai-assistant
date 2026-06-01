@@ -1,4 +1,4 @@
-```python
+
 from pypdf import PdfReader
 from docx import Document
 from io import BytesIO
@@ -133,4 +133,4 @@ def get_document_info(text):
         "characters": chars,
         "words": words
     }
-```
+
