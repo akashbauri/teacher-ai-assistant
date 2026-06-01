@@ -1,14 +1,25 @@
-# app.py
-
 ```python
 import streamlit as st
-from datetime import datetime
+
+from document_parser import (
+    extract_document_text,
+    chunk_text,
+    get_document_info
+)
+
+from chroma_manager import (
+    store_document_chunks,
+    get_document_count
+)
+
+from rag_engine import (
+    rag_answer,
+    generate_document_notes,
+    generate_document_mcqs,
+    generate_document_question_paper
+)
 
 from generators import (
-    explain_topic,
-    generate_notes,
-    generate_mcqs,
-    generate_question_paper,
     generate_lesson_plan,
     generate_teaching_guide
 )
@@ -25,15 +36,13 @@ from utils import (
     initialize_history,
     save_to_history,
     get_history,
-    detect_action,
-    detect_marks,
     detect_difficulty,
-    build_source_label
+    detect_marks
 )
 
-# ==========================================
+# ======================================
 # PAGE CONFIG
-# ==========================================
+# ======================================
 
 st.set_page_config(
     page_title="AI Teacher Assistant",
@@ -43,9 +52,9 @@ st.set_page_config(
 
 initialize_history()
 
-# ==========================================
+# ======================================
 # SIDEBAR
-# ==========================================
+# ======================================
 
 with st.sidebar:
 
@@ -55,205 +64,277 @@ with st.sidebar:
 
     history = get_history()
 
-    if len(history) == 0:
-        st.info("No history available")
-
-    else:
+    if history:
 
         for item in reversed(history[-10:]):
 
             st.write(
-                f"📝 {item['question'][:50]}"
+                f"📝 {item['question'][:40]}"
             )
 
-# ==========================================
+    st.divider()
+
+    st.markdown(
+        f"📄 Documents Stored: {get_document_count()}"
+    )
+
+# ======================================
 # HEADER
-# ==========================================
+# ======================================
 
 st.title("📚 AI Teacher Assistant")
 
 st.markdown("""
-Upload a document and ask anything.
+### Upload a document and ask anything.
 
-Default Behavior:
-
-✅ Explain like Class 5 Student
-
-✅ Generate Notes
-
-✅ Generate MCQs
-
-✅ Generate Question Papers
-
-✅ Generate Lesson Plans
-
-✅ Generate Teaching Guides
-
-✅ PDF Download
+Default:
+- Class 5 Friendly
+- Source Tracking
+- PDF Downloads
+- Notes
+- MCQs
+- Question Papers
+- Lesson Plans
+- Teaching Guides
 """)
 
-# ==========================================
+# ======================================
 # FILE UPLOAD
-# ==========================================
+# ======================================
 
 uploaded_file = st.file_uploader(
-    "Upload Document",
-    type=["pdf", "docx", "pptx", "png", "jpg", "jpeg"]
+    "Upload PDF / DOCX",
+    type=["pdf", "docx", "txt"]
 )
 
-# ==========================================
+# ======================================
+# PROCESS DOCUMENT
+# ======================================
+
+if uploaded_file:
+
+    with st.spinner(
+        "Reading document..."
+    ):
+
+        text = extract_document_text(
+            uploaded_file
+        )
+
+        chunks = chunk_text(text)
+
+        store_document_chunks(
+            chunks,
+            uploaded_file.name
+        )
+
+        info = get_document_info(text)
+
+        st.success(
+            "Document processed successfully."
+        )
+
+        st.info(
+            f"""
+Words: {info['words']}
+
+Characters: {info['characters']}
+"""
+        )
+
+# ======================================
 # SETTINGS
-# ==========================================
+# ======================================
 
-col1, col2 = st.columns(2)
+student_level = st.selectbox(
+    "Student Level",
+    [
+        "Class 5",
+        "Class 6-8",
+        "Class 9-10",
+        "Class 11-12",
+        "College"
+    ]
+)
 
-with col1:
+teaching_style = st.selectbox(
+    "Teaching Style",
+    [
+        "Beginner Friendly",
+        "Storytelling",
+        "Activity Based",
+        "Visual Learning",
+        "Exam Focused"
+    ]
+)
 
-    student_level = st.selectbox(
-        "Student Level",
-        [
-            "Class 5",
-            "Class 1-3",
-            "Class 6-8",
-            "Class 9-10",
-            "Class 11-12",
-            "College"
-        ]
-    )
+# ======================================
+# ACTION
+# ======================================
 
-with col2:
+action = st.selectbox(
+    "Choose Action",
+    [
+        "Ask Question",
+        "Generate Notes",
+        "Generate MCQs",
+        "Generate Question Paper",
+        "Generate Lesson Plan",
+        "Generate Teaching Guide"
+    ]
+)
 
-    teaching_style = st.selectbox(
-        "Teaching Style",
-        [
-            "Beginner Friendly",
-            "Storytelling",
-            "Activity Based",
-            "Visual Learning",
-            "Exam Focused"
-        ]
-    )
-
-# ==========================================
-# QUICK ACTIONS
-# ==========================================
-
-st.subheader("⚡ Quick Actions")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    explain_btn = st.button("📘 Explain Topic")
-
-with col2:
-    notes_btn = st.button("📝 Generate Notes")
-
-with col3:
-    mcq_btn = st.button("❓ Generate MCQs")
-
-col4, col5, col6 = st.columns(3)
-
-with col4:
-    qp_btn = st.button("📄 Question Paper")
-
-with col5:
-    lesson_btn = st.button("📅 Lesson Plan")
-
-with col6:
-    guide_btn = st.button("👨‍🏫 Teaching Guide")
-
-# ==========================================
-# USER INPUT
-# ==========================================
+# ======================================
+# QUERY
+# ======================================
 
 query = st.text_area(
-    "Ask Anything",
-    height=150
+    "Enter Topic or Question"
 )
 
-# ==========================================
-# MAIN GENERATE BUTTON
-# ==========================================
+# ======================================
+# GENERATE
+# ======================================
 
 if st.button("🚀 Generate"):
 
-    if query.strip() == "":
-        st.warning("Please enter a question.")
+    if not query:
+
+        st.warning(
+            "Please enter a topic."
+        )
+
         st.stop()
 
-    action = detect_action(query)
-
     result = ""
+    source = ""
 
-    with st.spinner("Generating..."):
+    with st.spinner(
+        "Generating..."
+    ):
 
         try:
 
-            if action == "notes":
+            # ----------------------
+            # QUESTION ANSWERING
+            # ----------------------
 
-                result = generate_notes(
+            if action == "Ask Question":
+
+                response = rag_answer(
                     query,
                     student_level
                 )
 
+                result = response["answer"]
+
+                source = response["source"]
+
                 pdf_data = notes_pdf(
                     result,
-                    "Uploaded Document"
+                    source
+                )
+
+                pdf_name = "answer.pdf"
+
+            # ----------------------
+            # NOTES
+            # ----------------------
+
+            elif action == "Generate Notes":
+
+                result = generate_document_notes(
+                    query,
+                    student_level
+                )
+
+                source = "Uploaded Document"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
                 )
 
                 pdf_name = "notes.pdf"
 
-            elif action == "mcqs":
+            # ----------------------
+            # MCQS
+            # ----------------------
 
-                difficulty = detect_difficulty(query)
+            elif action == "Generate MCQs":
 
-                result = generate_mcqs(
+                difficulty = detect_difficulty(
+                    query
+                )
+
+                result = generate_document_mcqs(
                     query,
                     difficulty
                 )
 
+                source = "Uploaded Document"
+
                 pdf_data = mcq_pdf(
                     result,
-                    "Uploaded Document"
+                    source
                 )
 
                 pdf_name = "mcqs.pdf"
 
-            elif action == "question paper":
+            # ----------------------
+            # QUESTION PAPER
+            # ----------------------
 
-                marks = detect_marks(query)
+            elif action == "Generate Question Paper":
 
-                difficulty = detect_difficulty(query)
+                marks = detect_marks(
+                    query
+                )
 
-                result = generate_question_paper(
+                difficulty = detect_difficulty(
+                    query
+                )
+
+                result = generate_document_question_paper(
                     query,
                     marks,
-                    difficulty,
-                    student_level
+                    difficulty
                 )
+
+                source = "Uploaded Document"
 
                 pdf_data = question_paper_pdf(
                     result,
-                    "Uploaded Document"
+                    source
                 )
 
                 pdf_name = "question_paper.pdf"
 
-            elif action == "lesson plan":
+            # ----------------------
+            # LESSON PLAN
+            # ----------------------
+
+            elif action == "Generate Lesson Plan":
 
                 result = generate_lesson_plan(
                     query,
                     student_level
                 )
 
+                source = "Uploaded Document"
+
                 pdf_data = lesson_plan_pdf(
                     result,
-                    "Uploaded Document"
+                    source
                 )
 
                 pdf_name = "lesson_plan.pdf"
 
-            elif action == "teaching guide":
+            # ----------------------
+            # TEACHING GUIDE
+            # ----------------------
+
+            elif action == "Generate Teaching Guide":
 
                 result = generate_teaching_guide(
                     query,
@@ -261,47 +342,34 @@ if st.button("🚀 Generate"):
                     teaching_style
                 )
 
+                source = "Uploaded Document"
+
                 pdf_data = teaching_guide_pdf(
                     result,
-                    "Uploaded Document"
+                    source
                 )
 
                 pdf_name = "teaching_guide.pdf"
 
-            else:
-
-                result = explain_topic(
-                    query,
-                    student_level,
-                    teaching_style
-                )
-
-                pdf_data = notes_pdf(
-                    result,
-                    "Uploaded Document"
-                )
-
-                pdf_name = "explanation.pdf"
-
             save_to_history(
                 query,
                 result,
-                "Uploaded Document"
+                source
             )
 
-            st.success("Generated Successfully")
+            st.success(
+                "Generated Successfully"
+            )
 
             st.markdown(result)
 
             st.divider()
 
-            st.subheader("📌 Source")
-
-            st.success(
-                build_source_label(
-                    document_used=True
-                )
+            st.subheader(
+                "📌 Source"
             )
+
+            st.success(source)
 
             st.download_button(
                 label="📄 Download PDF",
@@ -315,36 +383,4 @@ if st.button("🚀 Generate"):
             st.error(
                 f"Error: {str(e)}"
             )
-
-# ==========================================
-# QUICK ACTIONS
-# ==========================================
-
-if explain_btn:
-    st.info("Type a topic and click Generate")
-
-if notes_btn:
-    st.info("Type Generate Notes and click Generate")
-
-if mcq_btn:
-    st.info("Type Generate MCQs and click Generate")
-
-if qp_btn:
-    st.info("Type Generate Question Paper and click Generate")
-
-if lesson_btn:
-    st.info("Type Create Lesson Plan and click Generate")
-
-if guide_btn:
-    st.info("Type Create Teaching Guide and click Generate")
-
-# ==========================================
-# FOOTER
-# ==========================================
-
-st.divider()
-
-st.caption(
-    f"AI Teacher Assistant | {datetime.now().strftime('%Y-%m-%d')}"
-)
 ```
