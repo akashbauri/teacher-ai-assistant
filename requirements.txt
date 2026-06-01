@@ -25,6 +25,12 @@ langchain>=0.2.11
 langchain-core>=0.2.28
 
 langchain-community>=0.2.10
+langgraph
+chromadb
+sentence-transformers
+langchain
+langchain-community
+pypdf
 
 langgraph>=0.1.17
 
