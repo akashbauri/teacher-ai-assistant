@@ -84,3 +84,4 @@ return {
 "characters": len(text),
 "words": len(text.split())
 }
+
