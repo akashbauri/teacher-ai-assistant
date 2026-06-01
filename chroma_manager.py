@@ -1,71 +1,45 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
-
-client = chromadb.PersistentClient(
-    path="./chroma_db"
-)
-
-collection = client.get_or_create_collection(
-    name="teacher_documents"
-)
-
-embedding_model = SentenceTransformer(
-    "BAAI/bge-small-en-v1.5"
-)
+import streamlit as st
 
 
 def store_document_chunks(chunks, document_name="document"):
-    try:
-        ids = []
-        embeddings = []
-        metadatas = []
-
-        for i, chunk in enumerate(chunks):
-            chunk_id = f"{document_name}_{i}"
-
-            ids.append(chunk_id)
-
-            embeddings.append(
-                embedding_model.encode(chunk).tolist()
-            )
-
-            metadatas.append(
-                {
-                    "document": document_name,
-                    "chunk": i
-                }
-            )
-
-        collection.add(
-            ids=ids,
-            documents=chunks,
-            embeddings=embeddings,
-            metadatas=metadatas
-        )
-
-        return True
-
-    except Exception as e:
-        print("Store Error:", e)
-        return False
+    st.session_state["document_chunks"] = chunks
+    return True
 
 
 def search_document(query, top_k=5):
-    try:
-        query_embedding = embedding_model.encode(
-            query
-        ).tolist()
+    chunks = st.session_state.get(
+        "document_chunks",
+        []
+    )
 
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k
-        )
+    results = []
 
-        return results
+    query_words = query.lower().split()
 
-    except Exception as e:
-        print("Search Error:", e)
-        return None
+    for chunk in chunks:
+
+        score = 0
+
+        chunk_lower = chunk.lower()
+
+        for word in query_words:
+            if word in chunk_lower:
+                score += 1
+
+        if score > 0:
+            results.append(
+                (score, chunk)
+            )
+
+    results.sort(
+        reverse=True,
+        key=lambda x: x[0]
+    )
+
+    return [
+        item[1]
+        for item in results[:top_k]
+    ]
 
 
 def get_context(query, top_k=5):
@@ -74,45 +48,13 @@ def get_context(query, top_k=5):
         top_k
     )
 
-    if not results:
-        return ""
-
-    documents = results.get(
-        "documents",
-        []
-    )
-
-    if not documents:
-        return ""
-
-    context = ""
-
-    for doc_list in documents:
-        for doc in doc_list:
-            context += doc + "\n\n"
-
-    return context
-
-
-def reset_database():
-    global collection
-
-    try:
-        client.delete_collection(
-            "teacher_documents"
-        )
-    except:
-        pass
-
-    collection = client.get_or_create_collection(
-        "teacher_documents"
-    )
+    return "\n\n".join(results)
 
 
 def get_document_count():
-    try:
-        data = collection.get()
-        return len(data["ids"])
-
-    except:
-        return 0
+    return len(
+        st.session_state.get(
+            "document_chunks",
+            []
+        )
+    )
