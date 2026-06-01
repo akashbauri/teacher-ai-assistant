@@ -1,4 +1,4 @@
-```python
+
 import streamlit as st
 
 from document_parser import (
@@ -383,4 +383,3 @@ if st.button("🚀 Generate"):
             st.error(
                 f"Error: {str(e)}"
             )
-```
