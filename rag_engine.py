@@ -1,34 +1,152 @@
-def generate_document_notes(topic, student_level="Class 5"):
-    context = get_context(topic)
+import streamlit as st
+from openai import OpenAI
+
+
+def get_client():
+    return OpenAI(
+        api_key=st.secrets["OPENROUTER_API_KEY"],
+        base_url="https://openrouter.ai/api/v1"
+    )
+
+
+def rag_answer(question, student_level="Class 5"):
+    client = get_client()
 
     prompt = f"""
-You are an expert teacher.
+Answer the question for a {student_level} student.
 
-Create detailed notes from the uploaded document.
+Question:
+{question}
 
-Topic: {topic}
-
-Student Level: {student_level}
-
-Document Content:
-{context}
-
-Include:
-1. Introduction
-2. Important Concepts
-3. Key Points
-4. Summary
-
-Explain in simple language.
+Use simple language.
 """
-
-    client = get_client()
 
     response = client.chat.completions.create(
         model="deepseek/deepseek-chat",
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=1500
+    )
+
+    return {
+        "answer": response.choices[0].message.content,
+        "source": "AI Generated"
+    }
+
+
+def generate_document_notes(topic, student_level="Class 5"):
+    client = get_client()
+
+    prompt = f"""
+Create detailed notes.
+
+Topic:
+{topic}
+
+Student Level:
+{student_level}
+
+Include:
+- Introduction
+- Important Concepts
+- Key Points
+- Summary
+"""
+
+    response = client.chat.completions.create(
+        model="deepseek/deepseek-chat",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.4,
+        max_tokens=2500
+    )
+
+    return response.choices[0].message.content
+
+
+def generate_document_mcqs(topic, difficulty="Easy"):
+    client = get_client()
+
+    prompt = f"""
+Generate 10 MCQs.
+
+Topic:
+{topic}
+
+Difficulty:
+{difficulty}
+
+Format:
+
+Q1.
+A.
+B.
+C.
+D.
+
+Answer:
+"""
+
+    response = client.chat.completions.create(
+        model="deepseek/deepseek-chat",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
         temperature=0.4,
         max_tokens=3000
+    )
+
+    return response.choices[0].message.content
+
+
+def generate_document_question_paper(
+    topic,
+    marks=20,
+    difficulty="Mixed"
+):
+    client = get_client()
+
+    prompt = f"""
+Create a question paper.
+
+Topic:
+{topic}
+
+Total Marks:
+{marks}
+
+Difficulty:
+{difficulty}
+
+Include:
+- Very Short Questions
+- Short Questions
+- Long Questions
+- Marks Distribution
+"""
+
+    response = client.chat.completions.create(
+        model="deepseek/deepseek-chat",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.4,
+        max_tokens=3500
     )
 
     return response.choices[0].message.content
