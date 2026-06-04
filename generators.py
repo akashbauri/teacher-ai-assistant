@@ -33,7 +33,7 @@ def call_llm(user_prompt):
     client = get_client()
 
     response = client.chat.completions.create(
-        model="deepseek/deepseek-chat-v3",
+        model="model="deepseek/deepseek-chat"",
         messages=[
             {
                 "role": "system",
