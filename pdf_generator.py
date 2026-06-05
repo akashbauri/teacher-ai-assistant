@@ -3,10 +3,12 @@ from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
-    PageBreak
+    PageBreak,
+    Preformatted
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+from xml.sax.saxutils import escape
 
 
 def generate_pdf(
@@ -14,9 +16,6 @@ def generate_pdf(
     content,
     source="Uploaded Document"
 ):
-    """
-    Generate PDF and return bytes.
-    """
 
     buffer = BytesIO()
 
@@ -34,35 +33,43 @@ def generate_pdf(
     # Title
     # -----------------------------
     story.append(
-        Paragraph(title, title_style)
+        Paragraph(
+            escape(title),
+            title_style
+        )
     )
 
-    story.append(Spacer(1, 12))
+    story.append(
+        Spacer(1, 15)
+    )
 
     # -----------------------------
-    # Content
+    # Empty Content Check
     # -----------------------------
-    lines = content.split("\n")
+    if not content or str(content).strip() == "":
 
-    for line in lines:
+        content = "No content generated."
 
-        line = line.strip()
+    # -----------------------------
+    # Main Content
+    # -----------------------------
+    content = str(content)
 
-        if not line:
-            continue
+    content = escape(content)
 
-        story.append(
-            Paragraph(line, body_style)
+    story.append(
+        Preformatted(
+            content,
+            body_style
         )
+    )
 
-        story.append(
-            Spacer(1, 4)
-        )
-
-    story.append(Spacer(1, 20))
+    story.append(
+        Spacer(1, 20)
+    )
 
     # -----------------------------
-    # Source Section
+    # Source
     # -----------------------------
     story.append(
         Paragraph(
@@ -73,13 +80,13 @@ def generate_pdf(
 
     story.append(
         Paragraph(
-            source,
+            escape(source),
             body_style
         )
     )
 
     story.append(
-        Spacer(1, 12)
+        Spacer(1, 20)
     )
 
     # -----------------------------
@@ -94,83 +101,68 @@ def generate_pdf(
 
     doc.build(story)
 
-    pdf = buffer.getvalue()
+    pdf_bytes = buffer.getvalue()
 
     buffer.close()
 
-    return pdf
+    return pdf_bytes
 
 
-# -------------------------------------
-# Notes PDF
-# -------------------------------------
+# =====================================
+# NOTES PDF
+# =====================================
 
-def notes_pdf(
-    notes,
-    source
-):
+def notes_pdf(notes, source):
     return generate_pdf(
-        title="Study Notes",
-        content=notes,
-        source=source
+        "Study Notes",
+        notes,
+        source
     )
 
 
-# -------------------------------------
+# =====================================
 # MCQ PDF
-# -------------------------------------
+# =====================================
 
-def mcq_pdf(
-    mcqs,
-    source
-):
+def mcq_pdf(mcqs, source):
     return generate_pdf(
-        title="MCQ Sheet",
-        content=mcqs,
-        source=source
+        "MCQ Sheet",
+        mcqs,
+        source
     )
 
 
-# -------------------------------------
-# Question Paper PDF
-# -------------------------------------
+# =====================================
+# QUESTION PAPER PDF
+# =====================================
 
-def question_paper_pdf(
-    paper,
-    source
-):
+def question_paper_pdf(paper, source):
     return generate_pdf(
-        title="Question Paper",
-        content=paper,
-        source=source
+        "Question Paper",
+        paper,
+        source
     )
 
 
-# -------------------------------------
-# Lesson Plan PDF
-# -------------------------------------
+# =====================================
+# LESSON PLAN PDF
+# =====================================
 
-def lesson_plan_pdf(
-    lesson_plan,
-    source
-):
+def lesson_plan_pdf(lesson_plan, source):
     return generate_pdf(
-        title="Lesson Plan",
-        content=lesson_plan,
-        source=source
+        "Lesson Plan",
+        lesson_plan,
+        source
     )
 
 
-# -------------------------------------
-# Teaching Guide PDF
-# -------------------------------------
+# =====================================
+# TEACHING GUIDE PDF
+# =====================================
 
-def teaching_guide_pdf(
-    guide,
-    source
-):
+def teaching_guide_pdf(guide, source):
     return generate_pdf(
-        title="Teaching Guide",
-        content=guide,
-        source=source
+        "Teaching Guide",
+        guide,
+        source
     )
