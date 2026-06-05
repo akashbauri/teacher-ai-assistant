@@ -3,18 +3,34 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+# ==========================================
+# LOAD EMBEDDING MODEL
+# ==========================================
 
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+@st.cache_resource
+def load_model():
+    return SentenceTransformer(
+        "all-MiniLM-L6-v2"
+    )
 
+model = load_model()
+
+# ==========================================
+# STORE DOCUMENT IN FAISS
+# ==========================================
 
 def store_document_chunks(
     chunks,
     document_name="document"
 ):
 
-    embeddings = model.encode(chunks)
+    if not chunks:
+        return False
+
+    embeddings = model.encode(
+        chunks,
+        convert_to_numpy=True
+    )
 
     dimension = embeddings.shape[1]
 
@@ -23,17 +39,21 @@ def store_document_chunks(
     )
 
     index.add(
-        np.array(
-            embeddings,
-            dtype=np.float32
+        embeddings.astype(
+            np.float32
         )
     )
 
     st.session_state["faiss_index"] = index
     st.session_state["document_chunks"] = chunks
+    st.session_state["document_name"] = document_name
 
     return True
 
+
+# ==========================================
+# SEARCH DOCUMENT
+# ==========================================
 
 def search_document(
     query,
@@ -46,13 +66,13 @@ def search_document(
     index = st.session_state["faiss_index"]
 
     query_embedding = model.encode(
-        [query]
+        [query],
+        convert_to_numpy=True
     )
 
     distances, indices = index.search(
-        np.array(
-            query_embedding,
-            dtype=np.float32
+        query_embedding.astype(
+            np.float32
         ),
         top_k
     )
@@ -66,13 +86,20 @@ def search_document(
 
     for idx in indices[0]:
 
-        if idx < len(chunks):
+        if (
+            idx >= 0 and
+            idx < len(chunks)
+        ):
             results.append(
                 chunks[idx]
             )
 
     return results
 
+
+# ==========================================
+# GET CONTEXT
+# ==========================================
 
 def get_context(
     query,
@@ -84,8 +111,14 @@ def get_context(
         top_k
     )
 
-    return "\n\n".join(results)
+    return "\n\n".join(
+        results
+    )
 
+
+# ==========================================
+# DOCUMENT COUNT
+# ==========================================
 
 def get_document_count():
 
@@ -95,3 +128,21 @@ def get_document_count():
             []
         )
     )
+
+
+# ==========================================
+# CLEAR DOCUMENTS
+# ==========================================
+
+def clear_documents():
+
+    if "faiss_index" in st.session_state:
+        del st.session_state["faiss_index"]
+
+    if "document_chunks" in st.session_state:
+        del st.session_state["document_chunks"]
+
+    if "document_name" in st.session_state:
+        del st.session_state["document_name"]
+
+    return True
