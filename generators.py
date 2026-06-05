@@ -3,10 +3,14 @@ from openai import OpenAI
 
 
 def get_client():
-    api_key = st.secrets["OPENROUTER_API_KEY"]
+
+    if "OPENROUTER_API_KEY" not in st.secrets:
+        raise Exception(
+            "OPENROUTER_API_KEY not found"
+        )
 
     return OpenAI(
-        api_key=api_key,
+        api_key=st.secrets["OPENROUTER_API_KEY"],
         base_url="https://openrouter.ai/api/v1"
     )
 
@@ -16,7 +20,7 @@ def call_llm(prompt):
     client = get_client()
 
     response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
+        model="deepseek/deepseek-chat-v3-0324",
         messages=[
             {
                 "role": "user",
@@ -24,7 +28,7 @@ def call_llm(prompt):
             }
         ],
         temperature=0.4,
-        max_tokens=2000
+        max_tokens=2500
     )
 
     return response.choices[0].message.content
@@ -45,10 +49,12 @@ Student Level:
 {student_level}
 
 Include:
+
 - Learning Objectives
 - Introduction
 - Activities
 - Assessment
+- Homework
 """
 
     return call_llm(prompt)
@@ -73,10 +79,11 @@ Teaching Style:
 {teaching_style}
 
 Include:
+
 - Explanation
 - Examples
 - Activities
-- Questions
+- Assessment Questions
 """
 
     return call_llm(prompt)
