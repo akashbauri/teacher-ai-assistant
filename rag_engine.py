@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 
 from chroma_manager import get_context
+from utils import search_web, format_web_results
 
 
 def get_client():
@@ -10,6 +11,28 @@ def get_client():
         api_key=st.secrets["OPENROUTER_API_KEY"],
         base_url="https://openrouter.ai/api/v1"
     )
+
+
+def call_llm(
+    prompt,
+    max_tokens=3000
+):
+
+    client = get_client()
+
+    response = client.chat.completions.create(
+        model="deepseek/deepseek-chat",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=max_tokens
+    )
+
+    return response.choices[0].message.content
 
 
 def rag_answer(
@@ -22,12 +45,12 @@ def rag_answer(
         top_k=5
     )
 
-    client = get_client()
+    if context.strip():
 
-    prompt = f"""
+        prompt = f"""
 You are an expert teacher.
 
-Use ONLY the uploaded document.
+Use the uploaded document first.
 
 DOCUMENT:
 
@@ -40,24 +63,50 @@ QUESTION:
 Student Level:
 {student_level}
 
-Answer in simple language.
+Give a detailed answer.
 """
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.3,
-        max_tokens=2000
+        answer = call_llm(
+            prompt,
+            2000
+        )
+
+        return {
+            "answer": answer,
+            "source": "FAISS Document Search"
+        }
+
+    web_results = search_web(
+        question
+    )
+
+    web_context = format_web_results(
+        web_results
+    )
+
+    prompt = f"""
+Answer the question using web search results.
+
+WEB RESULTS:
+
+{web_context}
+
+QUESTION:
+
+{question}
+
+Student Level:
+{student_level}
+"""
+
+    answer = call_llm(
+        prompt,
+        2000
     )
 
     return {
-        "answer": response.choices[0].message.content,
-        "source": "Uploaded Document"
+        "answer": answer,
+        "source": "Web Search"
     }
 
 
@@ -70,8 +119,6 @@ def generate_document_notes(
         topic,
         top_k=5
     )
-
-    client = get_client()
 
     prompt = f"""
 Create detailed study notes.
@@ -95,19 +142,10 @@ Include:
 5. Exam Tips
 """
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.4,
-        max_tokens=3000
+    return call_llm(
+        prompt,
+        3000
     )
-
-    return response.choices[0].message.content
 
 
 def generate_document_mcqs(
@@ -120,10 +158,8 @@ def generate_document_mcqs(
         top_k=5
     )
 
-    client = get_client()
-
     prompt = f"""
-Generate 10 MCQs ONLY from the document.
+Generate 10 MCQs ONLY from the uploaded document.
 
 DOCUMENT:
 
@@ -135,31 +171,23 @@ TOPIC:
 Difficulty:
 {difficulty}
 
-Format:
+For every question provide:
 
-Q1.
-A.
-B.
-C.
-D.
+Question
+A)
+B)
+C)
+D)
 
-Answer:
-Explanation:
+Correct Answer
+
+Explanation
 """
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.4,
-        max_tokens=3500
+    return call_llm(
+        prompt,
+        3500
     )
-
-    return response.choices[0].message.content
 
 
 def generate_document_question_paper(
@@ -173,10 +201,8 @@ def generate_document_question_paper(
         top_k=5
     )
 
-    client = get_client()
-
     prompt = f"""
-Create a question paper ONLY from the document.
+Create a complete question paper.
 
 DOCUMENT:
 
@@ -185,30 +211,27 @@ DOCUMENT:
 TOPIC:
 {topic}
 
-Marks:
+TOTAL MARKS:
 {marks}
 
-Difficulty:
+DIFFICULTY:
 {difficulty}
 
 Include:
 
-1. Very Short Questions
-2. Short Questions
-3. Long Questions
-4. Marks Distribution
+Section A:
+Very Short Questions
+
+Section B:
+Short Questions
+
+Section C:
+Long Questions
+
+Provide marks distribution.
 """
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.4,
-        max_tokens=3500
+    return call_llm(
+        prompt,
+        3500
     )
-
-    return response.choices[0].message.content
