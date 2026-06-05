@@ -1,38 +1,38 @@
-streamlit>=1.37.0
+streamlit
 
-openai>=1.35.0
+openai
 
-reportlab>=4.2.2
+reportlab
 
-pandas>=2.2.2
+pandas
 
-numpy>=1.26.4
+numpy
 
-pypdf>=4.3.1
+pypdf
 
-python-docx>=1.1.2
+python-docx
 
-Pillow>=10.4.0
+Pillow
 
-requests>=2.32.0
+requests
 
-python-dotenv>=1.0.1
+python-dotenv
 
-faiss-cpu==1.8.0
+faiss-cpu
 
-sentence-transformers>=3.0.1
+sentence-transformers
 
-torch>=2.3.1
+torch
 
-tavily-python>=0.5.0
+tavily-python
 
-langchain>=0.2.11
+langchain
 faiss-cpu
 sentence-transformers
 torch
 numpy
 
-langchain-community>=0.2.10
+langchain-community
 
 langchain-core>=0.2.28
 
