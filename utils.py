@@ -1,14 +1,10 @@
 import streamlit as st
-from tavily import TavilyClient
 
 # ==========================================
 # HISTORY MANAGEMENT
 # ==========================================
 
 def initialize_history():
-    """
-    Initialize session history.
-    """
 
     if "history" not in st.session_state:
         st.session_state.history = []
@@ -19,9 +15,6 @@ def save_to_history(
     answer,
     source
 ):
-    """
-    Save interaction.
-    """
 
     st.session_state.history.append(
         {
@@ -33,11 +26,11 @@ def save_to_history(
 
 
 def get_history():
-    """
-    Return chat history.
-    """
 
-    return st.session_state.history
+    return st.session_state.get(
+        "history",
+        []
+    )
 
 
 # ==========================================
@@ -48,115 +41,95 @@ def build_source_label(
     document_used=False,
     web_used=False
 ):
-    """
-    Return source label.
-    """
 
     if document_used and web_used:
-        return "✓ Uploaded Document + ✓ Web Search"
+        return "Uploaded Document + Web Search"
 
     if document_used:
-        return "✓ Uploaded Document"
+        return "Uploaded Document"
 
     if web_used:
-        return "✓ Web Search"
+        return "Web Search"
 
-    return "Unknown Source"
+    return "AI Generated"
 
 
 # ==========================================
-# TAVILY SEARCH
+# SAFE WEB SEARCH
 # ==========================================
 
 def search_web(
     query,
     max_results=5
 ):
-    """
-    Search using Tavily.
-    """
 
     try:
 
-        client = TavilyClient(
-            api_key=st.secrets["TAVILY_API_KEY"]
+        from tavily import TavilyClient
+
+        api_key = st.secrets.get(
+            "TAVILY_API_KEY",
+            None
         )
 
-        results = client.search(
+        if not api_key:
+
+            return {
+                "results": [
+                    {
+                        "title": "Tavily API Missing",
+                        "content": "TAVILY_API_KEY not found in Streamlit secrets."
+                    }
+                ]
+            }
+
+        client = TavilyClient(
+            api_key=api_key
+        )
+
+        return client.search(
             query=query,
             max_results=max_results
         )
 
-        return results
-
     except Exception as e:
 
         return {
-            "error": str(e)
+            "results": [
+                {
+                    "title": "Search Error",
+                    "content": str(e)
+                }
+            ]
         }
 
 
 # ==========================================
-# FORMAT WEB RESULTS
+# FORMAT SEARCH RESULTS
 # ==========================================
 
 def format_web_results(results):
-    """
-    Convert Tavily output to text.
-    """
 
     if not results:
         return ""
 
-    if "results" not in results:
-        return ""
-
     output = []
 
-    for item in results["results"]:
-
-        title = item.get("title", "")
-        content = item.get("content", "")
+    for item in results.get("results", []):
 
         output.append(
-            f"Title: {title}\nContent: {content}"
+            f"""
+Title: {item.get('title','')}
+
+Content: {item.get('content','')}
+"""
         )
 
-    return "\n\n".join(output)
+    return "\n".join(output)
 
 
 # ==========================================
-# DOCUMENT PLACEHOLDER
-# ==========================================
-
-def extract_document_text(uploaded_file):
-    """
-    MVP placeholder.
-
-    Later:
-    PDF
-    DOCX
-    PPTX
-    OCR
-    ChromaDB
-
-    will be added here.
-    """
-
-    if uploaded_file is None:
-        return ""
-
-    return f"""
-    Uploaded File:
-    {uploaded_file.name}
-
-    Document extraction module
-    will be connected in Phase 2.
-    """
-
-
-# ==========================================
-# QUICK ACTION DETECTION
+# ACTION DETECTION
 # ==========================================
 
 def detect_action(user_query):
@@ -178,12 +151,6 @@ def detect_action(user_query):
     if "notes" in text:
         return "notes"
 
-    if "homework" in text:
-        return "homework"
-
-    if "worksheet" in text:
-        return "worksheet"
-
     return "explain"
 
 
@@ -192,9 +159,6 @@ def detect_action(user_query):
 # ==========================================
 
 def normalize_level(level):
-
-    if "Class 5" in level:
-        return "Class 5"
 
     return level
 
@@ -207,14 +171,14 @@ def detect_marks(text):
 
     text = text.lower()
 
-    if "20 mark" in text:
-        return 20
+    if "50" in text:
+        return 50
 
-    if "30 mark" in text:
+    if "30" in text:
         return 30
 
-    if "50 mark" in text:
-        return 50
+    if "20" in text:
+        return 20
 
     return 20
 
@@ -230,10 +194,10 @@ def detect_difficulty(text):
     if "easy" in text:
         return "Easy"
 
-    if "moderate" in text:
-        return "Moderate"
-
     if "hard" in text:
         return "Hard"
+
+    if "medium" in text:
+        return "Medium"
 
     return "Mixed"
