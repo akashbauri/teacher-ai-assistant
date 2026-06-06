@@ -9,9 +9,21 @@ from sentence_transformers import SentenceTransformer
 
 @st.cache_resource
 def load_model():
-    return SentenceTransformer(
-        "all-MiniLM-L6-v2"
-    )
+
+    try:
+
+        return SentenceTransformer(
+            "all-MiniLM-L6-v2"
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Embedding Model Error: {str(e)}"
+        )
+
+        return None
+
 
 model = load_model()
 
@@ -24,31 +36,52 @@ def store_document_chunks(
     document_name="document"
 ):
 
+    if model is None:
+        return False
+
     if not chunks:
         return False
 
-    embeddings = model.encode(
-        chunks,
-        convert_to_numpy=True
-    )
+    try:
 
-    dimension = embeddings.shape[1]
-
-    index = faiss.IndexFlatL2(
-        dimension
-    )
-
-    index.add(
-        embeddings.astype(
-            np.float32
+        embeddings = model.encode(
+            chunks,
+            convert_to_numpy=True
         )
-    )
 
-    st.session_state["faiss_index"] = index
-    st.session_state["document_chunks"] = chunks
-    st.session_state["document_name"] = document_name
+        dimension = embeddings.shape[1]
 
-    return True
+        index = faiss.IndexFlatL2(
+            dimension
+        )
+
+        index.add(
+            embeddings.astype(
+                np.float32
+            )
+        )
+
+        st.session_state[
+            "faiss_index"
+        ] = index
+
+        st.session_state[
+            "document_chunks"
+        ] = chunks
+
+        st.session_state[
+            "document_name"
+        ] = document_name
+
+        return True
+
+    except Exception as e:
+
+        st.error(
+            f"FAISS Storage Error: {str(e)}"
+        )
+
+        return False
 
 
 # ==========================================
@@ -60,41 +93,62 @@ def search_document(
     top_k=5
 ):
 
-    if "faiss_index" not in st.session_state:
+    if model is None:
         return []
 
-    index = st.session_state["faiss_index"]
+    if (
+        "faiss_index"
+        not in st.session_state
+    ):
+        return []
 
-    query_embedding = model.encode(
-        [query],
-        convert_to_numpy=True
-    )
+    try:
 
-    distances, indices = index.search(
-        query_embedding.astype(
-            np.float32
-        ),
-        top_k
-    )
+        index = st.session_state[
+            "faiss_index"
+        ]
 
-    chunks = st.session_state.get(
-        "document_chunks",
-        []
-    )
+        query_embedding = model.encode(
+            [query],
+            convert_to_numpy=True
+        )
 
-    results = []
+        distances, indices = index.search(
+            query_embedding.astype(
+                np.float32
+            ),
+            top_k
+        )
 
-    for idx in indices[0]:
+        chunks = st.session_state.get(
+            "document_chunks",
+            []
+        )
 
-        if (
-            idx >= 0 and
-            idx < len(chunks)
+        results = []
+
+        for position, idx in enumerate(
+            indices[0]
         ):
-            results.append(
-                chunks[idx]
-            )
 
-    return results
+            if (
+                idx >= 0
+                and
+                idx < len(chunks)
+            ):
+
+                score = distances[0][position]
+
+                if score < 5:
+                    results.append(
+                        chunks[idx]
+                    )
+
+        return results
+
+    except Exception:
+
+        return []
 
 
 # ==========================================
@@ -110,6 +164,9 @@ def get_context(
         query,
         top_k
     )
+
+    if not results:
+        return ""
 
     return "\n\n".join(
         results
@@ -131,18 +188,32 @@ def get_document_count():
 
 
 # ==========================================
+# DOCUMENT NAME
+# ==========================================
+
+def get_document_name():
+
+    return st.session_state.get(
+        "document_name",
+        "No Document"
+    )
+
+
+# ==========================================
 # CLEAR DOCUMENTS
 # ==========================================
 
 def clear_documents():
 
-    if "faiss_index" in st.session_state:
-        del st.session_state["faiss_index"]
+    keys = [
+        "faiss_index",
+        "document_chunks",
+        "document_name"
+    ]
 
-    if "document_chunks" in st.session_state:
-        del st.session_state["document_chunks"]
+    for key in keys:
 
-    if "document_name" in st.session_state:
-        del st.session_state["document_name"]
+        if key in st.session_state:
+            del st.session_state[key]
 
     return True
