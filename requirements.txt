@@ -8,7 +8,7 @@ python-docx
 Pillow
 requests
 python-dotenv
-faiss-cpu==1.8.0
+faiss-cpu
 sentence-transformers
 torch
 tavily-python
