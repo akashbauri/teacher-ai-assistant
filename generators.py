@@ -2,11 +2,16 @@ import streamlit as st
 from openai import OpenAI
 
 
+# ==========================================
+# OPENROUTER CLIENT
+# ==========================================
+
 def get_client():
 
     if "OPENROUTER_API_KEY" not in st.secrets:
+
         raise Exception(
-            "OPENROUTER_API_KEY not found"
+            "OPENROUTER_API_KEY not found in Streamlit Secrets"
         )
 
     return OpenAI(
@@ -15,24 +20,38 @@ def get_client():
     )
 
 
+# ==========================================
+# COMMON LLM FUNCTION
+# ==========================================
+
 def call_llm(prompt):
 
-    client = get_client()
+    try:
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat-v3-0324",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.4,
-        max_tokens=2500
-    )
+        client = get_client()
 
-    return response.choices[0].message.content
+        response = client.chat.completions.create(
+            model="deepseek/deepseek-chat",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.4,
+            max_tokens=2500
+        )
 
+        return response.choices[0].message.content
+
+    except Exception as e:
+
+        return f"Generation Error: {str(e)}"
+
+
+# ==========================================
+# LESSON PLAN GENERATOR
+# ==========================================
 
 def generate_lesson_plan(
     topic,
@@ -40,7 +59,9 @@ def generate_lesson_plan(
 ):
 
     prompt = f"""
-Create a lesson plan.
+You are an expert teacher.
+
+Create a complete lesson plan.
 
 Topic:
 {topic}
@@ -50,15 +71,31 @@ Student Level:
 
 Include:
 
-- Learning Objectives
-- Introduction
-- Activities
-- Assessment
-- Homework
+1. Learning Objectives
+
+2. Introduction
+
+3. Teaching Method
+
+4. Activities
+
+5. Class Discussion
+
+6. Assessment
+
+7. Homework
+
+8. Summary
+
+Make it detailed and classroom ready.
 """
 
     return call_llm(prompt)
 
+
+# ==========================================
+# TEACHING GUIDE GENERATOR
+# ==========================================
 
 def generate_teaching_guide(
     topic,
@@ -67,6 +104,8 @@ def generate_teaching_guide(
 ):
 
     prompt = f"""
+You are an expert teacher trainer.
+
 Create a teaching guide.
 
 Topic:
@@ -80,10 +119,23 @@ Teaching Style:
 
 Include:
 
-- Explanation
-- Examples
-- Activities
-- Assessment Questions
+1. Topic Explanation
+
+2. Key Concepts
+
+3. Real Life Examples
+
+4. Classroom Activities
+
+5. Student Questions
+
+6. Assessment Questions
+
+7. Common Mistakes
+
+8. Teaching Tips
+
+Make it practical and easy for teachers.
 """
 
     return call_llm(prompt)
