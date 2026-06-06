@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -11,7 +11,6 @@ from sentence_transformers import SentenceTransformer
 def load_model():
 
     try:
-
         return SentenceTransformer(
             "all-MiniLM-L6-v2"
         )
@@ -61,17 +60,9 @@ def store_document_chunks(
             )
         )
 
-        st.session_state[
-            "faiss_index"
-        ] = index
-
-        st.session_state[
-            "document_chunks"
-        ] = chunks
-
-        st.session_state[
-            "document_name"
-        ] = document_name
+        st.session_state["faiss_index"] = index
+        st.session_state["document_chunks"] = chunks
+        st.session_state["document_name"] = document_name
 
         return True
 
@@ -96,10 +87,7 @@ def search_document(
     if model is None:
         return []
 
-    if (
-        "faiss_index"
-        not in st.session_state
-    ):
+    if "faiss_index" not in st.session_state:
         return []
 
     try:
@@ -127,26 +115,24 @@ def search_document(
 
         results = []
 
-        for position, idx in enumerate(
-            indices[0]
-        ):
+        for idx in indices[0]:
 
             if (
-                idx >= 0
-                and
+                idx >= 0 and
                 idx < len(chunks)
             ):
 
-                score = distances[0][position]
-
-                if score < 5:
-                    results.append(
-                        chunks[idx]
-                    )
+                results.append(
+                    chunks[idx]
+                )
 
         return results
 
-    except Exception:
+    except Exception as e:
+
+        st.error(
+            f"Search Error: {str(e)}"
+        )
 
         return []
 
