@@ -7,7 +7,7 @@ import streamlit as st
 def initialize_history():
 
     if "history" not in st.session_state:
-        st.session_state.history = []
+        st.session_state["history"] = []
 
 
 def save_to_history(
@@ -16,7 +16,7 @@ def save_to_history(
     source
 ):
 
-    st.session_state.history.append(
+    st.session_state["history"].append(
         {
             "question": question,
             "answer": answer,
@@ -43,10 +43,10 @@ def build_source_label(
 ):
 
     if document_used and web_used:
-        return "Uploaded Document + Web Search"
+        return "FAISS Document + Web Search"
 
     if document_used:
-        return "Uploaded Document"
+        return "FAISS Document"
 
     if web_used:
         return "Web Search"
@@ -55,7 +55,7 @@ def build_source_label(
 
 
 # ==========================================
-# SAFE WEB SEARCH
+# WEB SEARCH
 # ==========================================
 
 def search_web(
@@ -69,7 +69,7 @@ def search_web(
 
         api_key = st.secrets.get(
             "TAVILY_API_KEY",
-            None
+            ""
         )
 
         if not api_key:
@@ -77,8 +77,8 @@ def search_web(
             return {
                 "results": [
                     {
-                        "title": "Tavily API Missing",
-                        "content": "TAVILY_API_KEY not found in Streamlit secrets."
+                        "title": "Missing API Key",
+                        "content": "TAVILY_API_KEY not found in Streamlit Secrets."
                     }
                 ]
             }
@@ -87,10 +87,12 @@ def search_web(
             api_key=api_key
         )
 
-        return client.search(
+        results = client.search(
             query=query,
             max_results=max_results
         )
+
+        return results
 
     except Exception as e:
 
@@ -105,7 +107,7 @@ def search_web(
 
 
 # ==========================================
-# FORMAT SEARCH RESULTS
+# FORMAT WEB RESULTS
 # ==========================================
 
 def format_web_results(results):
@@ -115,17 +117,37 @@ def format_web_results(results):
 
     output = []
 
-    for item in results.get("results", []):
+    for item in results.get(
+        "results",
+        []
+    ):
+
+        title = item.get(
+            "title",
+            ""
+        )
+
+        content = item.get(
+            "content",
+            ""
+        )
+
+        url = item.get(
+            "url",
+            ""
+        )
 
         output.append(
             f"""
-Title: {item.get('title','')}
+Title: {title}
 
-Content: {item.get('content','')}
+Content: {content}
+
+Source: {url}
 """
         )
 
-    return "\n".join(output)
+    return "\n\n".join(output)
 
 
 # ==========================================
@@ -170,6 +192,12 @@ def normalize_level(level):
 def detect_marks(text):
 
     text = text.lower()
+
+    if "100" in text:
+        return 100
+
+    if "80" in text:
+        return 80
 
     if "50" in text:
         return 50
