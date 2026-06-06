@@ -5,6 +5,10 @@ from chroma_manager import get_context
 from utils import search_web, format_web_results
 
 
+# ==========================================
+# OPENROUTER CLIENT
+# ==========================================
+
 def get_client():
 
     return OpenAI(
@@ -12,6 +16,10 @@ def get_client():
         base_url="https://openrouter.ai/api/v1"
     )
 
+
+# ==========================================
+# COMMON LLM FUNCTION
+# ==========================================
 
 def call_llm(
     prompt,
@@ -35,6 +43,10 @@ def call_llm(
     return response.choices[0].message.content
 
 
+# ==========================================
+# QUESTION ANSWERING
+# ==========================================
+
 def rag_answer(
     question,
     student_level="Class 5"
@@ -45,12 +57,14 @@ def rag_answer(
         top_k=5
     )
 
-    if context.strip():
+    # Use uploaded document first
+
+    if context and context.strip():
 
         prompt = f"""
 You are an expert teacher.
 
-Use the uploaded document first.
+Use ONLY the uploaded document.
 
 DOCUMENT:
 
@@ -63,7 +77,12 @@ QUESTION:
 Student Level:
 {student_level}
 
-Give a detailed answer.
+Instructions:
+
+- Answer clearly
+- Explain concepts simply
+- Give examples if available
+- Do not invent facts outside the document
 """
 
         answer = call_llm(
@@ -75,6 +94,8 @@ Give a detailed answer.
             "answer": answer,
             "source": "FAISS Document Search"
         }
+
+    # Fallback to Web Search
 
     web_results = search_web(
         question
@@ -97,6 +118,8 @@ QUESTION:
 
 Student Level:
 {student_level}
+
+Give a detailed answer.
 """
 
     answer = call_llm(
@@ -110,6 +133,10 @@ Student Level:
     }
 
 
+# ==========================================
+# NOTES GENERATOR
+# ==========================================
+
 def generate_document_notes(
     topic,
     student_level="Class 5"
@@ -119,6 +146,14 @@ def generate_document_notes(
         topic,
         top_k=5
     )
+
+    if not context.strip():
+
+        return """
+No relevant content found in the uploaded document.
+
+Please upload a document containing this topic.
+"""
 
     prompt = f"""
 Create detailed study notes.
@@ -138,8 +173,11 @@ Include:
 1. Introduction
 2. Important Concepts
 3. Key Points
-4. Summary
-5. Exam Tips
+4. Examples
+5. Summary
+6. Exam Tips
+
+Use simple language.
 """
 
     return call_llm(
@@ -147,6 +185,10 @@ Include:
         3000
     )
 
+
+# ==========================================
+# MCQ GENERATOR
+# ==========================================
 
 def generate_document_mcqs(
     topic,
@@ -158,8 +200,16 @@ def generate_document_mcqs(
         top_k=5
     )
 
+    if not context.strip():
+
+        return """
+No relevant content found in the uploaded document.
+
+Please upload a document containing this topic.
+"""
+
     prompt = f"""
-Generate 10 MCQs ONLY from the uploaded document.
+Generate 10 high-quality MCQs ONLY from the uploaded document.
 
 DOCUMENT:
 
@@ -171,17 +221,25 @@ TOPIC:
 Difficulty:
 {difficulty}
 
-For every question provide:
+Requirements:
 
-Question
+- 4 options
+- One correct answer
+- Explanation
+- Mix of Easy, Medium and Hard
+- Exam style questions
+
+Format:
+
+Q1.
 A)
 B)
 C)
 D)
 
-Correct Answer
+Correct Answer:
 
-Explanation
+Explanation:
 """
 
     return call_llm(
@@ -189,6 +247,10 @@ Explanation
         3500
     )
 
+
+# ==========================================
+# QUESTION PAPER GENERATOR
+# ==========================================
 
 def generate_document_question_paper(
     topic,
@@ -201,8 +263,16 @@ def generate_document_question_paper(
         top_k=5
     )
 
+    if not context.strip():
+
+        return """
+No relevant content found in the uploaded document.
+
+Please upload a document containing this topic.
+"""
+
     prompt = f"""
-Create a complete question paper.
+Create a complete question paper ONLY from the uploaded document.
 
 DOCUMENT:
 
@@ -217,18 +287,23 @@ TOTAL MARKS:
 DIFFICULTY:
 {difficulty}
 
-Include:
+Structure:
 
-Section A:
+SECTION A
 Very Short Questions
 
-Section B:
+SECTION B
 Short Questions
 
-Section C:
+SECTION C
 Long Questions
 
-Provide marks distribution.
+Requirements:
+
+- Proper marks distribution
+- Balanced difficulty
+- Exam format
+- Clear instructions
 """
 
     return call_llm(
