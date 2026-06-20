@@ -1,5 +1,9 @@
 import streamlit as st
 
+from config import (
+    TAVILY_API_KEY
+)
+
 # ==========================================
 # HISTORY MANAGEMENT
 # ==========================================
@@ -67,32 +71,25 @@ def search_web(
 
         from tavily import TavilyClient
 
-        api_key = st.secrets.get(
-            "TAVILY_API_KEY",
-            ""
-        )
-
-        if not api_key:
+        if not TAVILY_API_KEY:
 
             return {
                 "results": [
                     {
                         "title": "Missing API Key",
-                        "content": "TAVILY_API_KEY not found in Streamlit Secrets."
+                        "content": "TAVILY_API_KEY not found."
                     }
                 ]
             }
 
         client = TavilyClient(
-            api_key=api_key
+            api_key=TAVILY_API_KEY
         )
 
-        results = client.search(
+        return client.search(
             query=query,
             max_results=max_results
         )
-
-        return results
 
     except Exception as e:
 
@@ -122,28 +119,13 @@ def format_web_results(results):
         []
     ):
 
-        title = item.get(
-            "title",
-            ""
-        )
-
-        content = item.get(
-            "content",
-            ""
-        )
-
-        url = item.get(
-            "url",
-            ""
-        )
-
         output.append(
             f"""
-Title: {title}
+Title: {item.get('title','')}
 
-Content: {content}
+Content: {item.get('content','')}
 
-Source: {url}
+Source: {item.get('url','')}
 """
         )
 
@@ -169,6 +151,15 @@ def detect_action(user_query):
 
     if "teaching guide" in text:
         return "teaching guide"
+
+    if "mind map" in text:
+        return "mind map"
+
+    if "flow chart" in text:
+        return "flow chart"
+
+    if "summary" in text:
+        return "summary"
 
     if "notes" in text:
         return "notes"
