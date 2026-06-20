@@ -10,7 +10,8 @@ from document_parser import (
 # Vector Database
 from chroma_manager import (
     store_document_chunks,
-    get_document_count
+    get_document_count,
+    get_document_name
 )
 
 # RAG Engine
@@ -24,7 +25,11 @@ from rag_engine import (
 # Content Generators
 from generators import (
     generate_lesson_plan,
-    generate_teaching_guide
+    generate_teaching_guide,
+    generate_flowchart,
+    generate_mindmap,
+    generate_chapter_summary,
+    generate_important_questions
 )
 
 # PDF Generators
@@ -72,7 +77,9 @@ with st.sidebar:
     history = get_history()
 
     if history:
+
         for item in reversed(history[-10:]):
+
             st.write(
                 f"📝 {item['question'][:40]}"
             )
@@ -86,9 +93,16 @@ with st.sidebar:
     )
 
     if doc_count > 0:
-        st.success("✅ Vector Database Active")
+
+        st.success(
+            f"✅ Current Document: {get_document_name()}"
+        )
+
     else:
-        st.warning("⚠️ No Document Indexed")
+
+        st.warning(
+            "⚠️ No Document Indexed"
+        )
 
 # =====================================================
 # HEADER
@@ -100,15 +114,21 @@ st.markdown("""
 ### Upload a document and ask anything.
 
 #### Features
+
 - PDF / DOCX / TXT Upload
-- ChromaDB Vector Search
-- AI Question Answering
+- FAISS Vector Search
+- Groq LLM
+- Question Answering
 - Notes Generator
 - MCQ Generator
 - Question Paper Generator
 - Lesson Plan Generator
 - Teaching Guide Generator
-- Web Search
+- Flow Chart Generator
+- Mind Map Generator
+- Chapter Summary Generator
+- Important Questions Generator
+- Tavily Web Search
 - PDF Download
 """)
 
@@ -128,13 +148,17 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
     if (
-        "last_uploaded_file" not in st.session_state
+        "last_uploaded_file"
+        not in st.session_state
         or
-        st.session_state["last_uploaded_file"]
-        != uploaded_file.name
+        st.session_state[
+            "last_uploaded_file"
+        ] != uploaded_file.name
     ):
 
-        with st.spinner("Processing document..."):
+        with st.spinner(
+            "Processing document..."
+        ):
 
             text = extract_document_text(
                 uploaded_file
@@ -162,10 +186,14 @@ if uploaded_file:
 Words: {info['words']}
 
 Characters: {info['characters']}
+
+Chunks: {info['chunks']}
 """
             )
 
-            st.subheader("📖 Document Preview")
+            st.subheader(
+                "📖 Document Preview"
+            )
 
             st.text_area(
                 "Preview",
@@ -200,7 +228,7 @@ teaching_style = st.selectbox(
 )
 
 # =====================================================
-# ACTION SELECTION
+# ACTIONS
 # =====================================================
 
 action = st.selectbox(
@@ -212,12 +240,16 @@ action = st.selectbox(
         "Generate Question Paper",
         "Generate Lesson Plan",
         "Generate Teaching Guide",
+        "Generate Flow Chart",
+        "Generate Mind Map",
+        "Generate Chapter Summary",
+        "Generate Important Questions",
         "Web Search"
     ]
 )
 
 # =====================================================
-# QUERY INPUT
+# QUERY
 # =====================================================
 
 query = st.text_area(
@@ -225,13 +257,17 @@ query = st.text_area(
 )
 
 # =====================================================
-# GENERATE BUTTON
+# GENERATE
 # =====================================================
 
 if st.button("🚀 Generate"):
 
     if not query:
-        st.warning("Please enter a topic.")
+
+        st.warning(
+            "Please enter a topic."
+        )
+
         st.stop()
 
     result = ""
@@ -239,9 +275,10 @@ if st.button("🚀 Generate"):
 
     try:
 
-        with st.spinner("Generating..."):
+        with st.spinner(
+            "Generating..."
+        ):
 
-            # Ask Question
             if action == "Ask Question":
 
                 response = rag_answer(
@@ -259,7 +296,6 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "answer.pdf"
 
-            # Notes
             elif action == "Generate Notes":
 
                 result = generate_document_notes(
@@ -267,11 +303,7 @@ if st.button("🚀 Generate"):
                     student_level
                 )
 
-                source = (
-                    uploaded_file.name
-                    if uploaded_file
-                    else "Document"
-                )
+                source = get_document_name()
 
                 pdf_data = notes_pdf(
                     result,
@@ -280,7 +312,6 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "notes.pdf"
 
-            # MCQs
             elif action == "Generate MCQs":
 
                 difficulty = detect_difficulty(
@@ -292,11 +323,7 @@ if st.button("🚀 Generate"):
                     difficulty
                 )
 
-                source = (
-                    uploaded_file.name
-                    if uploaded_file
-                    else "Document"
-                )
+                source = get_document_name()
 
                 pdf_data = mcq_pdf(
                     result,
@@ -305,10 +332,11 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "mcqs.pdf"
 
-            # Question Paper
             elif action == "Generate Question Paper":
 
-                marks = detect_marks(query)
+                marks = detect_marks(
+                    query
+                )
 
                 difficulty = detect_difficulty(
                     query
@@ -320,11 +348,7 @@ if st.button("🚀 Generate"):
                     difficulty
                 )
 
-                source = (
-                    uploaded_file.name
-                    if uploaded_file
-                    else "Document"
-                )
+                source = get_document_name()
 
                 pdf_data = question_paper_pdf(
                     result,
@@ -333,7 +357,6 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "question_paper.pdf"
 
-            # Lesson Plan
             elif action == "Generate Lesson Plan":
 
                 result = generate_lesson_plan(
@@ -341,11 +364,7 @@ if st.button("🚀 Generate"):
                     student_level
                 )
 
-                source = (
-                    uploaded_file.name
-                    if uploaded_file
-                    else "Document"
-                )
+                source = "AI Generated"
 
                 pdf_data = lesson_plan_pdf(
                     result,
@@ -354,7 +373,6 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "lesson_plan.pdf"
 
-            # Teaching Guide
             elif action == "Generate Teaching Guide":
 
                 result = generate_teaching_guide(
@@ -363,11 +381,7 @@ if st.button("🚀 Generate"):
                     teaching_style
                 )
 
-                source = (
-                    uploaded_file.name
-                    if uploaded_file
-                    else "Document"
-                )
+                source = "AI Generated"
 
                 pdf_data = teaching_guide_pdf(
                     result,
@@ -376,10 +390,71 @@ if st.button("🚀 Generate"):
 
                 pdf_name = "teaching_guide.pdf"
 
-            # Web Search
+            elif action == "Generate Flow Chart":
+
+                result = generate_flowchart(
+                    query
+                )
+
+                source = "AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "flowchart.pdf"
+
+            elif action == "Generate Mind Map":
+
+                result = generate_mindmap(
+                    query
+                )
+
+                source = "AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "mindmap.pdf"
+
+            elif action == "Generate Chapter Summary":
+
+                result = generate_chapter_summary(
+                    query
+                )
+
+                source = "AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "chapter_summary.pdf"
+
+            elif action == "Generate Important Questions":
+
+                result = generate_important_questions(
+                    query
+                )
+
+                source = "AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "important_questions.pdf"
+
             elif action == "Web Search":
 
-                results = search_web(query)
+                results = search_web(
+                    query
+                )
 
                 result = format_web_results(
                     results
@@ -408,7 +483,10 @@ if st.button("🚀 Generate"):
 
             st.divider()
 
-            st.subheader("📌 Source")
+            st.subheader(
+                "📌 Source"
+            )
+
             st.info(source)
 
             st.download_button(
@@ -419,4 +497,5 @@ if st.button("🚀 Generate"):
             )
 
     except Exception as e:
+
         st.exception(e)
