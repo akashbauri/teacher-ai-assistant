@@ -1,19 +1,35 @@
-import streamlit as st
-from openai import OpenAI
+import traceback
 
-from chroma_manager import get_context
-from utils import search_web, format_web_results
+from groq import Groq
+
+from config import (
+    GROQ_API_KEY
+)
+
+from chroma_manager import (
+    get_context
+)
+
+from utils import (
+    search_web,
+    format_web_results
+)
 
 
 # ==========================================
-# OPENROUTER CLIENT
+# GROQ CLIENT
 # ==========================================
 
 def get_client():
 
-    return OpenAI(
-        api_key=st.secrets["OPENROUTER_API_KEY"],
-        base_url="https://openrouter.ai/api/v1"
+    if not GROQ_API_KEY:
+
+        raise Exception(
+            "GROQ_API_KEY not found."
+        )
+
+    return Groq(
+        api_key=GROQ_API_KEY
     )
 
 
@@ -23,24 +39,100 @@ def get_client():
 
 def call_llm(
     prompt,
-    max_tokens=3000
+    max_tokens=1500
 ):
 
-    client = get_client()
+    try:
 
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-chat",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.3,
-        max_tokens=max_tokens
-    )
+        client = get_client()
 
-    return response.choices[0].message.content
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.3,
+            max_tokens=max_tokens
+        )
+
+        return (
+            response
+            .choices[0]
+            .message
+            .content
+        )
+
+    except Exception as e:
+
+        return (
+            f"Generation Error:\n\n{str(e)}"
+        )
+
+
+# ==========================================
+# EDUCATIONAL FORMATTER
+# ==========================================
+
+def build_education_prompt(
+    topic,
+    context,
+    student_level
+):
+
+    return f"""
+You are an expert teacher.
+
+Student Level:
+{student_level}
+
+DOCUMENT:
+
+{context}
+
+QUESTION:
+
+{topic}
+
+Provide answer in this format:
+
+# Explanation
+
+Explain simply.
+
+# Key Concepts
+
+Bullet points.
+
+# Flow Chart
+
+Use arrows.
+
+Example:
+
+Concept
+↓
+Step 1
+↓
+Step 2
+
+# Mind Map
+
+Concept
+├── Idea 1
+├── Idea 2
+└── Idea 3
+
+# Exam Tips
+
+Important points.
+
+# Summary
+
+Short summary.
+"""
 
 
 # ==========================================
@@ -52,85 +144,63 @@ def rag_answer(
     student_level="Class 5"
 ):
 
-    context = get_context(
-        question,
-        top_k=5
-    )
+    try:
 
-    # Use uploaded document first
+        context = get_context(
+            question,
+            top_k=5
+        )
 
-    if context and context.strip():
+        if context.strip():
 
-        prompt = f"""
-You are an expert teacher.
+            prompt = build_education_prompt(
+                question,
+                context,
+                student_level
+            )
 
-Use ONLY the uploaded document.
+            answer = call_llm(
+                prompt,
+                1200
+            )
 
-DOCUMENT:
+            return {
+                "answer": answer,
+                "source": "FAISS Document Search"
+            }
 
-{context}
+        web_results = search_web(
+            question
+        )
 
-QUESTION:
+        web_context = format_web_results(
+            web_results
+        )
 
-{question}
-
-Student Level:
-{student_level}
-
-Instructions:
-
-- Answer clearly
-- Explain concepts simply
-- Give examples if available
-- Do not invent facts outside the document
-"""
+        prompt = build_education_prompt(
+            question,
+            web_context,
+            student_level
+        )
 
         answer = call_llm(
             prompt,
-            2000
+            1200
         )
 
         return {
             "answer": answer,
-            "source": "FAISS Document Search"
+            "source": "Web Search"
         }
 
-    # Fallback to Web Search
+    except Exception:
 
-    web_results = search_web(
-        question
-    )
-
-    web_context = format_web_results(
-        web_results
-    )
-
-    prompt = f"""
-Answer the question using web search results.
-
-WEB RESULTS:
-
-{web_context}
-
-QUESTION:
-
-{question}
-
-Student Level:
-{student_level}
-
-Give a detailed answer.
-"""
-
-    answer = call_llm(
-        prompt,
-        2000
-    )
-
-    return {
-        "answer": answer,
-        "source": "Web Search"
-    }
+        return {
+            "answer":
+                traceback.format_exc(),
+            "source":
+                "Error"
+        }
 
 
 # ==========================================
@@ -149,40 +219,43 @@ def generate_document_notes(
 
     if not context.strip():
 
-        return """
-No relevant content found in the uploaded document.
-
-Please upload a document containing this topic.
-"""
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
-Create detailed study notes.
-
-DOCUMENT:
-
-{context}
+Create detailed notes.
 
 TOPIC:
 {topic}
+
+DOCUMENT:
+{context}
 
 Student Level:
 {student_level}
 
 Include:
 
-1. Introduction
-2. Important Concepts
-3. Key Points
-4. Examples
-5. Summary
-6. Exam Tips
+# Introduction
 
-Use simple language.
+# Key Concepts
+
+# Important Points
+
+# Flow Chart
+
+# Mind Map
+
+# Exam Tips
+
+# Summary
 """
 
     return call_llm(
         prompt,
-        3000
+        1500
     )
 
 
@@ -202,36 +275,27 @@ def generate_document_mcqs(
 
     if not context.strip():
 
-        return """
-No relevant content found in the uploaded document.
-
-Please upload a document containing this topic.
-"""
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
-Generate 10 high-quality MCQs ONLY from the uploaded document.
-
-DOCUMENT:
-
-{context}
+Generate 20 MCQs.
 
 TOPIC:
 {topic}
 
+DOCUMENT:
+{context}
+
 Difficulty:
 {difficulty}
 
-Requirements:
+For every question:
 
-- 4 options
-- One correct answer
-- Explanation
-- Mix of Easy, Medium and Hard
-- Exam style questions
+Q1
 
-Format:
-
-Q1.
 A)
 B)
 C)
@@ -244,12 +308,12 @@ Explanation:
 
     return call_llm(
         prompt,
-        3500
+        1800
     )
 
 
 # ==========================================
-# QUESTION PAPER GENERATOR
+# QUESTION PAPER
 # ==========================================
 
 def generate_document_question_paper(
@@ -265,48 +329,44 @@ def generate_document_question_paper(
 
     if not context.strip():
 
-        return """
-No relevant content found in the uploaded document.
-
-Please upload a document containing this topic.
-"""
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
-Create a complete question paper ONLY from the uploaded document.
-
-DOCUMENT:
-
-{context}
+Create a complete question paper.
 
 TOPIC:
 {topic}
 
-TOTAL MARKS:
+DOCUMENT:
+{context}
+
+MARKS:
 {marks}
 
 DIFFICULTY:
 {difficulty}
 
-Structure:
+Include:
 
 SECTION A
+
 Very Short Questions
 
 SECTION B
+
 Short Questions
 
 SECTION C
+
 Long Questions
 
-Requirements:
-
-- Proper marks distribution
-- Balanced difficulty
-- Exam format
-- Clear instructions
+Provide marks distribution.
 """
 
     return call_llm(
         prompt,
-        3500
+        1800
     )
