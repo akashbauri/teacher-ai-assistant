@@ -1,22 +1,24 @@
-import streamlit as st
-from openai import OpenAI
+from groq import Groq
+
+from config import (
+    GROQ_API_KEY
+)
 
 
 # ==========================================
-# OPENROUTER CLIENT
+# GROQ CLIENT
 # ==========================================
 
 def get_client():
 
-    if "OPENROUTER_API_KEY" not in st.secrets:
+    if not GROQ_API_KEY:
 
         raise Exception(
-            "OPENROUTER_API_KEY not found in Streamlit Secrets"
+            "GROQ_API_KEY not found."
         )
 
-    return OpenAI(
-        api_key=st.secrets["OPENROUTER_API_KEY"],
-        base_url="https://openrouter.ai/api/v1"
+    return Groq(
+        api_key=GROQ_API_KEY
     )
 
 
@@ -24,33 +26,43 @@ def get_client():
 # COMMON LLM FUNCTION
 # ==========================================
 
-def call_llm(prompt):
+def call_llm(
+    prompt,
+    max_tokens=1500
+):
 
     try:
 
         client = get_client()
 
         response = client.chat.completions.create(
-            model="deepseek/deepseek-chat",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            temperature=0.4,
-            max_tokens=2500
+            temperature=0.3,
+            max_tokens=max_tokens
         )
 
-        return response.choices[0].message.content
+        return (
+            response
+            .choices[0]
+            .message
+            .content
+        )
 
     except Exception as e:
 
-        return f"Generation Error: {str(e)}"
+        return (
+            f"Generation Error:\n\n{str(e)}"
+        )
 
 
 # ==========================================
-# LESSON PLAN GENERATOR
+# LESSON PLAN
 # ==========================================
 
 def generate_lesson_plan(
@@ -63,38 +75,43 @@ You are an expert teacher.
 
 Create a complete lesson plan.
 
-Topic:
+TOPIC:
 {topic}
 
-Student Level:
+STUDENT LEVEL:
 {student_level}
 
 Include:
 
-1. Learning Objectives
+# Learning Objectives
 
-2. Introduction
+# Introduction
 
-3. Teaching Method
+# Teaching Method
 
-4. Activities
+# Classroom Activities
 
-5. Class Discussion
+# Assessment
 
-6. Assessment
+# Homework
 
-7. Homework
+# Summary
 
-8. Summary
+# Flow Chart
 
-Make it detailed and classroom ready.
+# Mind Map
+
+Make it classroom ready.
 """
 
-    return call_llm(prompt)
+    return call_llm(
+        prompt,
+        1500
+    )
 
 
 # ==========================================
-# TEACHING GUIDE GENERATOR
+# TEACHING GUIDE
 # ==========================================
 
 def generate_teaching_guide(
@@ -108,34 +125,174 @@ You are an expert teacher trainer.
 
 Create a teaching guide.
 
-Topic:
+TOPIC:
 {topic}
 
-Student Level:
+STUDENT LEVEL:
 {student_level}
 
-Teaching Style:
+TEACHING STYLE:
 {teaching_style}
 
 Include:
 
-1. Topic Explanation
+# Topic Explanation
 
-2. Key Concepts
+# Key Concepts
 
-3. Real Life Examples
+# Real Life Examples
 
-4. Classroom Activities
+# Classroom Activities
 
-5. Student Questions
+# Student Questions
 
-6. Assessment Questions
+# Assessment Questions
 
-7. Common Mistakes
+# Common Mistakes
 
-8. Teaching Tips
+# Teaching Tips
 
-Make it practical and easy for teachers.
+# Flow Chart
+
+# Mind Map
+
+Make it practical and easy to teach.
 """
 
-    return call_llm(prompt)
+    return call_llm(
+        prompt,
+        1500
+    )
+
+
+# ==========================================
+# FLOWCHART GENERATOR
+# ==========================================
+
+def generate_flowchart(
+    topic
+):
+
+    prompt = f"""
+Create a detailed educational flowchart.
+
+TOPIC:
+{topic}
+
+Rules:
+
+- Use arrows
+- Step-by-step structure
+- Easy for students
+
+Example:
+
+Topic
+↓
+Step 1
+↓
+Step 2
+↓
+Step 3
+"""
+
+    return call_llm(
+        prompt,
+        1000
+    )
+
+
+# ==========================================
+# MIND MAP GENERATOR
+# ==========================================
+
+def generate_mindmap(
+    topic
+):
+
+    prompt = f"""
+Create an educational mind map.
+
+TOPIC:
+{topic}
+
+Format:
+
+Topic
+├── Concept 1
+├── Concept 2
+├── Concept 3
+└── Concept 4
+
+Keep it clean and exam focused.
+"""
+
+    return call_llm(
+        prompt,
+        1000
+    )
+
+
+# ==========================================
+# CHAPTER SUMMARY
+# ==========================================
+
+def generate_chapter_summary(
+    topic
+):
+
+    prompt = f"""
+Create a chapter summary.
+
+TOPIC:
+{topic}
+
+Include:
+
+# Key Concepts
+
+# Important Definitions
+
+# Important Formulas
+
+# Exam Points
+
+# Quick Revision Notes
+
+Keep it concise.
+"""
+
+    return call_llm(
+        prompt,
+        1200
+    )
+
+
+# ==========================================
+# IMPORTANT QUESTIONS
+# ==========================================
+
+def generate_important_questions(
+    topic
+):
+
+    prompt = f"""
+Generate important exam questions.
+
+TOPIC:
+{topic}
+
+Include:
+
+- Very Short Questions
+- Short Questions
+- Long Questions
+- HOTS Questions
+
+Provide at least 20 questions.
+"""
+
+    return call_llm(
+        prompt,
+        1200
+    )
