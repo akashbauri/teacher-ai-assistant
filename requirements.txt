@@ -1,5 +1,5 @@
 streamlit
-openai
+groq
 reportlab
 pandas
 numpy
@@ -12,3 +12,8 @@ faiss-cpu
 sentence-transformers
 torch
 tavily-python
+langgraph
+langchain
+langchain-core
+langchain-community
+redis
