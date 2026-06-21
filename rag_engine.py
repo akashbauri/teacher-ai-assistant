@@ -1,54 +1,67 @@
-import traceback
+# generators.py
 
+import traceback
 from groq import Groq
 
-from config import (
-    GROQ_API_KEY
-)
-
-from chroma_manager import (
-    get_context
-)
-
-from utils import (
-    search_web,
-    format_web_results
-)
+from config import GROQ_API_KEY
+from chroma_manager import get_context
+from utils import search_web, format_web_results
 
 
-# ==========================================
+# =====================================================
 # GROQ CLIENT
-# ==========================================
+# =====================================================
 
 def get_client():
+    """
+    Initialize Groq client.
+    """
 
     if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY not found.")
 
-        raise Exception(
-            "GROQ_API_KEY not found."
-        )
-
-    return Groq(
-        api_key=GROQ_API_KEY
-    )
+    return Groq(api_key=GROQ_API_KEY)
 
 
-# ==========================================
-# COMMON LLM FUNCTION
-# ==========================================
+# =====================================================
+# LLM CALL
+# =====================================================
 
-def call_llm(
-    prompt,
-    max_tokens=1500
-):
+SYSTEM_PROMPT = """
+You are an expert NCF 2023 and NEP 2020 aligned AI Teacher Assistant.
+
+Always:
+
+- Explain like a teacher
+- Use simple language
+- Focus on conceptual understanding
+- Promote competency-based learning
+- Include learning outcomes
+- Include competencies
+- Include activity-based learning
+- Include inclusive teaching strategies
+- Avoid rote memorization
+- Encourage critical thinking
+- Use real-life examples
+- Explain in classroom-friendly language
+"""
+
+
+def call_llm(prompt: str, max_tokens: int = 2000) -> str:
+    """
+    Send prompt to Groq LLM.
+    """
 
     try:
-
         client = get_client()
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
                 {
                     "role": "user",
                     "content": prompt
@@ -58,91 +71,84 @@ def call_llm(
             max_tokens=max_tokens
         )
 
-        return (
-            response
-            .choices[0]
-            .message
-            .content
-        )
+        return response.choices[0].message.content
 
     except Exception as e:
-
-        return (
-            f"Generation Error:\n\n{str(e)}"
-        )
+        return f"Generation Error:\n\n{str(e)}"
 
 
-# ==========================================
-# EDUCATIONAL FORMATTER
-# ==========================================
+# =====================================================
+# EDUCATION PROMPT BUILDER
+# =====================================================
 
 def build_education_prompt(
-    topic,
-    context,
-    student_level
-):
+    topic: str,
+    context: str,
+    student_level: str
+) -> str:
 
     return f"""
-You are an expert teacher.
+Create a complete NCF 2023 aligned explanation.
 
-Student Level:
-{student_level}
-
-DOCUMENT:
-
-{context}
-
-QUESTION:
-
+TOPIC:
 {topic}
 
-Provide answer in this format:
+STUDENT LEVEL:
+{student_level}
 
-# Explanation
+REFERENCE CONTENT:
+{context}
 
-Explain simply.
+Generate:
+
+# Simple Explanation
+
+Explain like a teacher.
+
+# Learning Outcomes
+
+# Competencies
 
 # Key Concepts
 
-Bullet points.
+# Real Life Examples
+
+# Activity Based Learning
+
+# Inclusive Teaching Strategy
 
 # Flow Chart
 
 Use arrows.
 
-Example:
-
-Concept
-↓
-Step 1
-↓
-Step 2
-
 # Mind Map
 
-Concept
-├── Idea 1
-├── Idea 2
-└── Idea 3
+Use tree structure.
+
+# Assessment Questions
+
+Easy Questions
+
+Moderate Questions
+
+Hard Questions
 
 # Exam Tips
 
-Important points.
-
 # Summary
 
-Short summary.
+Use simple language.
 """
 
 
-# ==========================================
-# QUESTION ANSWERING
-# ==========================================
+# =====================================================
+# RAG QUESTION ANSWERING
+# =====================================================
 
 def rag_answer(
-    question,
-    student_level="Class 5"
-):
+    question: str,
+    student_level: str = "Class 5"
+) -> dict:
 
     try:
 
@@ -161,17 +167,15 @@ def rag_answer(
 
             answer = call_llm(
                 prompt,
-                1200
+                max_tokens=1800
             )
 
             return {
                 "answer": answer,
-                "source": "FAISS Document Search"
+                "source": "Document Knowledge Base"
             }
 
-        web_results = search_web(
-            question
-        )
+        web_results = search_web(question)
 
         web_context = format_web_results(
             web_results
@@ -185,7 +189,7 @@ def rag_answer(
 
         answer = call_llm(
             prompt,
-            1200
+            max_tokens=1800
         )
 
         return {
@@ -196,21 +200,19 @@ def rag_answer(
     except Exception:
 
         return {
-            "answer":
-                traceback.format_exc(),
-            "source":
-                "Error"
+            "answer": traceback.format_exc(),
+            "source": "Error"
         }
 
 
-# ==========================================
+# =====================================================
 # NOTES GENERATOR
-# ==========================================
+# =====================================================
 
 def generate_document_notes(
-    topic,
-    student_level="Class 5"
-):
+    topic: str,
+    student_level: str = "Class 5"
+) -> str:
 
     context = get_context(
         topic,
@@ -218,14 +220,10 @@ def generate_document_notes(
     )
 
     if not context.strip():
-
-        return (
-            "No relevant content found "
-            "in uploaded document."
-        )
+        return "No relevant content found in uploaded document."
 
     prompt = f"""
-Create detailed notes.
+Generate NCF 2023 aligned study notes.
 
 TOPIC:
 {topic}
@@ -233,40 +231,50 @@ TOPIC:
 DOCUMENT:
 {context}
 
-Student Level:
+STUDENT LEVEL:
 {student_level}
 
-Include:
+Generate:
 
-# Introduction
+# Chapter Overview
+
+# Learning Outcomes
+
+# Competencies
 
 # Key Concepts
 
-# Important Points
+# Detailed Notes
+
+# Real Life Examples
+
+# Activity Based Learning
+
+# Inclusive Teaching Strategy
 
 # Flow Chart
 
 # Mind Map
 
-# Exam Tips
+# Revision Notes
 
 # Summary
 """
 
     return call_llm(
         prompt,
-        1500
+        max_tokens=2200
     )
 
 
-# ==========================================
+# =====================================================
 # MCQ GENERATOR
-# ==========================================
+# =====================================================
 
 def generate_document_mcqs(
-    topic,
-    difficulty="Mixed"
-):
+    topic: str,
+    difficulty: str = "Mixed"
+) -> str:
 
     context = get_context(
         topic,
@@ -274,14 +282,10 @@ def generate_document_mcqs(
     )
 
     if not context.strip():
-
-        return (
-            "No relevant content found "
-            "in uploaded document."
-        )
+        return "No relevant content found in uploaded document."
 
     prompt = f"""
-Generate 20 MCQs.
+Generate NCF 2023 aligned MCQs.
 
 TOPIC:
 {topic}
@@ -289,38 +293,50 @@ TOPIC:
 DOCUMENT:
 {context}
 
-Difficulty:
+DIFFICULTY:
 {difficulty}
 
-For every question:
+Generate:
 
-Q1
+# Learning Outcomes
 
-A)
-B)
-C)
-D)
+# Competencies
 
-Correct Answer:
+# Easy MCQs
 
-Explanation:
+5 Questions
+
+# Moderate MCQs
+
+5 Questions
+
+# Hard MCQs
+
+5 Questions
+
+For every question provide:
+
+- Question
+- Options A-D
+- Correct Answer
+- Explanation
 """
 
     return call_llm(
         prompt,
-        1800
+        max_tokens=2500
     )
 
 
-# ==========================================
-# QUESTION PAPER
-# ==========================================
+# =====================================================
+# QUESTION PAPER GENERATOR
+# =====================================================
 
 def generate_document_question_paper(
-    topic,
-    marks=20,
-    difficulty="Mixed"
-):
+    topic: str,
+    marks: int = 20,
+    difficulty: str = "Mixed"
+) -> str:
 
     context = get_context(
         topic,
@@ -328,14 +344,10 @@ def generate_document_question_paper(
     )
 
     if not context.strip():
-
-        return (
-            "No relevant content found "
-            "in uploaded document."
-        )
+        return "No relevant content found in uploaded document."
 
     prompt = f"""
-Create a complete question paper.
+Generate a complete NCF 2023 aligned question paper.
 
 TOPIC:
 {topic}
@@ -343,30 +355,41 @@ TOPIC:
 DOCUMENT:
 {context}
 
-MARKS:
+TOTAL MARKS:
 {marks}
 
 DIFFICULTY:
 {difficulty}
 
-Include:
+Generate:
+
+# Learning Outcomes
+
+# Competencies
 
 SECTION A
-
-Very Short Questions
+Easy Questions
 
 SECTION B
-
-Short Questions
+Moderate Questions
 
 SECTION C
+Hard Questions
 
-Long Questions
+SECTION D
+Case Based Questions
 
-Provide marks distribution.
+SECTION E
+Activity Based Questions
+
+Provide:
+
+- Marks Distribution
+- Answer Key
+- Competency Mapping
 """
 
     return call_llm(
         prompt,
-        1800
+        max_tokens=2500
     )
