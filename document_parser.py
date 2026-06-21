@@ -1,61 +1,71 @@
 from pypdf import PdfReader
 from docx import Document
+import re
 
 
-# ==========================================
+# =====================================================
 # PDF READER
-# ==========================================
+# =====================================================
 
 def extract_pdf_text(uploaded_file):
+    """
+    Extract text from PDF.
+    """
 
     try:
 
         pdf = PdfReader(uploaded_file)
 
-        text = ""
+        text_parts = []
 
         for page in pdf.pages:
 
             page_text = page.extract_text()
 
             if page_text:
-                text += page_text + "\n"
+                text_parts.append(page_text)
 
-        return text
+        return "\n".join(text_parts)
 
     except Exception as e:
 
-        return f"PDF Error: {str(e)}"
+        return f"PDF Error: {e}"
 
 
-# ==========================================
+# =====================================================
 # DOCX READER
-# ==========================================
+# =====================================================
 
 def extract_docx_text(uploaded_file):
+    """
+    Extract text from DOCX.
+    """
 
     try:
 
         document = Document(uploaded_file)
 
-        text = ""
+        text_parts = [
+            para.text.strip()
+            for para in document.paragraphs
+            if para.text.strip()
+        ]
 
-        for para in document.paragraphs:
-
-            text += para.text + "\n"
-
-        return text
+        return "\n".join(text_parts)
 
     except Exception as e:
 
-        return f"DOCX Error: {str(e)}"
+        return f"DOCX Error: {e}"
 
 
-# ==========================================
+# =====================================================
 # TXT READER
-# ==========================================
+# =====================================================
 
 def extract_txt_text(uploaded_file):
+    """
+    Extract text from TXT.
+    """
 
     try:
 
@@ -66,74 +76,187 @@ def extract_txt_text(uploaded_file):
 
     except Exception as e:
 
-        return f"TXT Error: {str(e)}"
+        return f"TXT Error: {e}"
 
 
-# ==========================================
+# =====================================================
+# CLEAN TEXT
+# =====================================================
+
+def clean_text(text):
+    """
+    Clean extracted text.
+    """
+
+    if not text:
+        return ""
+
+    text = str(text)
+
+    # Remove excessive spaces
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    # Remove multiple blank lines
+    text = re.sub(
+        r"\n\s*\n+",
+        "\n",
+        text
+    )
+
+    return text.strip()
+
+
+# =====================================================
 # DOCUMENT ROUTER
-# ==========================================
+# =====================================================
 
 def extract_document_text(uploaded_file):
+    """
+    Automatically detect file type
+    and extract text.
+    """
 
     if uploaded_file is None:
         return ""
 
-    file_name = uploaded_file.name.lower()
+    filename = uploaded_file.name.lower()
 
-    if file_name.endswith(".pdf"):
-        return extract_pdf_text(uploaded_file)
+    try:
 
-    elif file_name.endswith(".docx"):
-        return extract_docx_text(uploaded_file)
+        if filename.endswith(".pdf"):
 
-    elif file_name.endswith(".txt"):
-        return extract_txt_text(uploaded_file)
+            text = extract_pdf_text(
+                uploaded_file
+            )
 
-    return ""
+        elif filename.endswith(".docx"):
+
+            text = extract_docx_text(
+                uploaded_file
+            )
+
+        elif filename.endswith(".txt"):
+
+            text = extract_txt_text(
+                uploaded_file
+            )
+
+        else:
+
+            return (
+                "Unsupported file format. "
+                "Please upload PDF, DOCX or TXT."
+            )
+
+        return clean_text(text)
+
+    except Exception as e:
+
+        return f"Document Error: {e}"
 
 
-# ==========================================
-# CHUNK TEXT
-# ==========================================
+# =====================================================
+# SMART CHUNKING
+# =====================================================
 
 def chunk_text(
     text,
-    chunk_size=1200,
-    overlap=200
+    chunk_size=1000,
+    overlap=150
 ):
+    """
+    Create overlapping chunks for RAG.
+    """
 
     if not text:
         return []
 
-    chunks = []
+    text = clean_text(text)
 
+    chunks = []
     start = 0
 
     while start < len(text):
 
         end = start + chunk_size
 
-        chunks.append(
-            text[start:end]
-        )
+        # Try sentence boundary
+        if end < len(text):
 
-        start += (
-            chunk_size - overlap
-        )
+            split_pos = max(
+                text.rfind(".", start, end),
+                text.rfind("?", start, end),
+                text.rfind("!", start, end)
+            )
+
+            if split_pos > start:
+                end = split_pos + 1
+
+        chunk = text[start:end].strip()
+
+        if chunk:
+            chunks.append(chunk)
+
+        start = end - overlap
+
+        if start < 0:
+            start = 0
+
+        if end >= len(text):
+            break
 
     return chunks
 
 
-# ==========================================
+# =====================================================
 # DOCUMENT INFO
-# ==========================================
+# =====================================================
 
 def get_document_info(text):
+    """
+    Return document statistics.
+    """
+
+    chunks = chunk_text(text)
 
     return {
         "characters": len(text),
         "words": len(text.split()),
-        "chunks": len(
-            chunk_text(text)
-        )
+        "chunks": len(chunks)
     }
+
+
+# =====================================================
+# EXTRA UTILITIES
+# =====================================================
+
+def get_preview(
+    text,
+    max_chars=2000
+):
+    """
+    Preview document text.
+    """
+
+    if not text:
+        return ""
+
+    return text[:max_chars]
+
+
+def validate_document(text):
+    """
+    Check if extracted text is usable.
+    """
+
+    if not text:
+        return False
+
+    if len(text.strip()) < 50:
+        return False
+
+    return True
