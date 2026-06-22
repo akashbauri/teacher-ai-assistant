@@ -1,91 +1,48 @@
-# generators.py
+# ==========================================
+# rag_engine.py
+# ==========================================
 
 import traceback
-from groq import Groq
 
-from config import GROQ_API_KEY
 from chroma_manager import get_context
-from utils import search_web, format_web_results
+
+from utils import (
+    search_web,
+    format_web_results
+)
+
+from llm_service import call_llm
 
 
-# =====================================================
-# GROQ CLIENT
-# =====================================================
+# ==========================================
+# COMMON DOCUMENT CHECK
+# ==========================================
 
-def get_client():
+def get_document_context(
+    query,
+    top_k=5
+):
     """
-    Initialize Groq client.
-    """
-
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY not found.")
-
-    return Groq(api_key=GROQ_API_KEY)
-
-
-# =====================================================
-# LLM CALL
-# =====================================================
-
-SYSTEM_PROMPT = """
-You are an expert NCF 2023 and NEP 2020 aligned AI Teacher Assistant.
-
-Always:
-
-- Explain like a teacher
-- Use simple language
-- Focus on conceptual understanding
-- Promote competency-based learning
-- Include learning outcomes
-- Include competencies
-- Include activity-based learning
-- Include inclusive teaching strategies
-- Avoid rote memorization
-- Encourage critical thinking
-- Use real-life examples
-- Explain in classroom-friendly language
-"""
-
-
-def call_llm(prompt: str, max_tokens: int = 2000) -> str:
-    """
-    Send prompt to Groq LLM.
+    Retrieve context from ChromaDB.
     """
 
-    try:
-        client = get_client()
+    context = get_context(
+        query,
+        top_k=top_k
+    )
 
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.3,
-            max_tokens=max_tokens
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-        return f"Generation Error:\n\n{str(e)}"
+    return context.strip()
 
 
-# =====================================================
+# ==========================================
 # EDUCATION PROMPT BUILDER
-# =====================================================
+# ==========================================
 
 def build_education_prompt(
-    topic: str,
-    context: str,
-    student_level: str
-) -> str:
+    topic,
+    context,
+    student_level
+):
 
     return f"""
 Create a complete NCF 2023 aligned explanation.
@@ -138,26 +95,31 @@ Hard Questions
 # Summary
 
 Use simple language.
+
+Focus on conceptual understanding.
 """
 
 
-# =====================================================
-# RAG QUESTION ANSWERING
-# =====================================================
+# ==========================================
+# QUESTION ANSWERING
+# ==========================================
 
 def rag_answer(
-    question: str,
-    student_level: str = "Class 5"
-) -> dict:
+    question,
+    student_level="Class 5"
+):
 
     try:
 
-        context = get_context(
-            question,
-            top_k=5
+        # -----------------------------
+        # ChromaDB Search
+        # -----------------------------
+
+        context = get_document_context(
+            question
         )
 
-        if context.strip():
+        if context:
 
             prompt = build_education_prompt(
                 question,
@@ -175,7 +137,13 @@ def rag_answer(
                 "source": "Document Knowledge Base"
             }
 
-        web_results = search_web(question)
+        # -----------------------------
+        # Web Search Fallback
+        # -----------------------------
+
+        web_results = search_web(
+            question
+        )
 
         web_context = format_web_results(
             web_results
@@ -205,22 +173,25 @@ def rag_answer(
         }
 
 
-# =====================================================
+# ==========================================
 # NOTES GENERATOR
-# =====================================================
+# ==========================================
 
 def generate_document_notes(
-    topic: str,
-    student_level: str = "Class 5"
-) -> str:
+    topic,
+    student_level="Class 5"
+):
 
-    context = get_context(
-        topic,
-        top_k=5
+    context = get_document_context(
+        topic
     )
 
-    if not context.strip():
-        return "No relevant content found in uploaded document."
+    if not context:
+
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
 Generate NCF 2023 aligned study notes.
@@ -259,6 +230,8 @@ Generate:
 # Revision Notes
 
 # Summary
+
+Explain as a teacher.
 """
 
     return call_llm(
@@ -267,22 +240,25 @@ Generate:
     )
 
 
-# =====================================================
+# ==========================================
 # MCQ GENERATOR
-# =====================================================
+# ==========================================
 
 def generate_document_mcqs(
-    topic: str,
-    difficulty: str = "Mixed"
-) -> str:
+    topic,
+    difficulty="Mixed"
+):
 
-    context = get_context(
-        topic,
-        top_k=5
+    context = get_document_context(
+        topic
     )
 
-    if not context.strip():
-        return "No relevant content found in uploaded document."
+    if not context:
+
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
 Generate NCF 2023 aligned MCQs.
@@ -303,23 +279,31 @@ Generate:
 # Competencies
 
 # Easy MCQs
+(Knowledge)
 
 5 Questions
 
 # Moderate MCQs
+(Understanding & Application)
 
 5 Questions
 
 # Hard MCQs
+(Analysis & Evaluation)
 
 5 Questions
 
 For every question provide:
 
-- Question
-- Options A-D
-- Correct Answer
-- Explanation
+Question
+
+Options A-D
+
+Correct Answer
+
+Explanation
+
+Avoid rote memorization.
 """
 
     return call_llm(
@@ -328,23 +312,26 @@ For every question provide:
     )
 
 
-# =====================================================
+# ==========================================
 # QUESTION PAPER GENERATOR
-# =====================================================
+# ==========================================
 
 def generate_document_question_paper(
-    topic: str,
-    marks: int = 20,
-    difficulty: str = "Mixed"
-) -> str:
+    topic,
+    marks=20,
+    difficulty="Mixed"
+):
 
-    context = get_context(
-        topic,
-        top_k=5
+    context = get_document_context(
+        topic
     )
 
-    if not context.strip():
-        return "No relevant content found in uploaded document."
+    if not context:
+
+        return (
+            "No relevant content found "
+            "in uploaded document."
+        )
 
     prompt = f"""
 Generate a complete NCF 2023 aligned question paper.
@@ -387,6 +374,8 @@ Provide:
 - Marks Distribution
 - Answer Key
 - Competency Mapping
+
+Focus on conceptual understanding.
 """
 
     return call_llm(
