@@ -1,394 +1,402 @@
-# 📚 AI Teacher Assistant
+# 📚 NCF 2023 AI Teacher Assistant
 
-## Overview
-
-AI Teacher Assistant is an intelligent educational platform that helps teachers transform uploaded documents into teaching materials instantly.
-
-Teachers can upload educational documents and:
-
-* Ask questions about the content
-* Generate notes
-* Generate MCQs
-* Generate question papers
-* Create lesson plans
-* Generate teaching guides
-* Download outputs as PDF
-* Get answers with source tracking
-
-The platform explains concepts in a simple way, suitable for Class 5 students by default.
+An AI-powered educational platform that transforms educational documents into complete classroom-ready teaching resources aligned with NCF 2023 and NEP 2020 principles.
 
 ---
 
-# 🎯 Problem Statement
+# 🚀 Overview
 
-Teachers spend significant time preparing:
+NCF 2023 AI Teacher Assistant helps teachers instantly generate:
 
-* Notes
-* Question papers
+* Lesson Plans
+* Teaching Guides
+* Study Notes
 * MCQs
-* Lesson plans
-* Teaching strategies
+* Question Papers
+* Learning Outcomes
+* Competencies
+* Flow Charts
+* Mind Maps
+* Chapter Summaries
+* Important Questions
 
-This project automates these tasks using AI.
+from uploaded educational documents.
+
+The platform combines:
+
+* Document Understanding
+* Retrieval Augmented Generation (RAG)
+* AI-Powered Content Generation
+* Competency-Based Learning
+* Activity-Based Learning
+* Inclusive Teaching Practices
+
+to reduce teacher preparation time and improve classroom effectiveness.
 
 ---
 
-# 🚀 Features
+# ✨ Current MVP Features
 
-## 1. Document Upload
+## 📄 Document Processing
 
-Supported Formats:
+Supports:
 
 * PDF
 * DOCX
 * TXT
 
-Upload educational documents and let AI analyze the content.
+Capabilities:
+
+* Text Extraction
+* Smart Chunking
+* Vector Embeddings
+* Semantic Search
 
 ---
 
-## 2. Document Question Answering
+## 🧠 AI Powered Question Answering
 
-Ask questions directly from uploaded documents.
+Teachers can ask questions directly from uploaded content.
 
-Example:
+Features:
 
-What is Photosynthesis?
-
-AI retrieves relevant content from the uploaded document and generates an answer.
-
----
-
-## 3. Web Search Fallback
-
-If the answer is not found in the uploaded document:
-
-Question
-↓
-Web Search
-↓
-AI Answer
-
-Source is displayed accordingly.
+* Context-Aware Answers
+* Document-Based Responses
+* Web Search Fallback
+* Teacher-Friendly Explanations
 
 ---
 
-## 4. Notes Generator
+## 📚 Teaching Resource Generation
 
-Generate:
+### Study Notes
 
-* Topic-wise Notes
+Generates:
+
+* Chapter Overview
+* Learning Outcomes
+* Competencies
+* Key Concepts
 * Revision Notes
-* Summary Notes
-* Important Points
+* Summary
 
 ---
 
-## 5. MCQ Generator
+### MCQ Generator
 
-Generate:
+Supports:
 
-* Easy MCQs
-* Moderate MCQs
-* Hard MCQs
-* Mixed MCQs
-
-Each MCQ includes:
-
-* Question
-* 4 Options
-* Correct Answer
+* Single Correct Answer
+* Multiple Correct Answers
+* All of the Above
+* None of the Above
+* Assertion & Reason
+* Case Based Questions
+* Activity Based Questions
+* Competency Based Questions
 
 ---
 
-## 6. Question Paper Generator
+### Question Paper Generator
 
-Generate question papers based on:
+Generates:
 
-* 20 Marks
-* 30 Marks
-* 50 Marks
-
-Difficulty Levels:
-
-* Easy
-* Moderate
-* Hard
-* Mixed
+* Easy Questions
+* Moderate Questions
+* Hard Questions
+* Case Based Questions
+* Activity Based Questions
+* Competency Mapping
 
 ---
 
-## 7. Lesson Plan Generator
+### Lesson Plan Generator
 
-Generate:
+Generates:
 
-* Learning Objectives
-* Introduction
+* Curricular Goals
+* Competencies
+* Learning Outcomes
+* Assessment Indicators
+* Teacher Scripts
+* Art Activities
+* Game Based Activities
+* Reflection Activities
+* Assessment Rubrics
+* Real Life Applications
+
+---
+
+### Teaching Guide Generator
+
+Generates:
+
+* Teacher Instructions
+* Student Responses
+* Teaching Strategies
+* Misconceptions
+* Assessments
+* Extension Activities
+
+---
+
+### Visual Learning Resources
+
+Generates:
+
+#### Flow Charts
+
+Pedagogical Flow:
+
+Prior Knowledge
+↓
+Introduction
+↓
+Exploration
+↓
+Concept Building
+↓
+Activity
+↓
+Discussion
+↓
+Application
+↓
+Assessment
+↓
+Reflection
+
+#### Mind Maps
+
+Includes:
+
+* Concepts
+* Competencies
+* Learning Outcomes
 * Activities
 * Assessment
-* Homework
-* Recap
+* Real Life Applications
 
 ---
 
-## 8. Teaching Guide Generator
+# 🎯 NCF 2023 Alignment
 
-Provides teachers with:
+The platform currently supports:
 
-* Teaching Approach
-* Classroom Activities
-* Real-life Examples
-* Student Engagement Tips
-* Common Doubts
-* Homework Suggestions
-
----
-
-## 9. PDF Download
-
-Generated outputs can be downloaded as PDF.
-
-Supported:
-
-* Notes
-* MCQs
-* Question Papers
-* Lesson Plans
-* Teaching Guides
+* Competency Based Learning
+* Activity Based Learning
+* Inclusive Teaching
+* Real Life Applications
+* Critical Thinking
+* Communication Skills
+* Problem Solving
+* Collaboration
+* Creativity
+* Inquiry Based Learning
+* Art Integrated Learning
+* Game Based Learning
 
 ---
 
-## 10. Source Tracking
+# 🏗️ Current Technology Stack
 
-Every response displays the source.
-
-Examples:
-
-Source:
-Uploaded Document
-
-or
-
-Source:
-Web Search
-
----
-
-# 🧠 AI Workflow
-
-Upload Document
-↓
-Extract Text
-↓
-Chunk Text
-↓
-Create Embeddings
-↓
-Store in ChromaDB
-↓
-Teacher Question
-↓
-Semantic Search
-↓
-Retrieve Context
-↓
-OpenRouter LLM
-↓
-Generate Answer
-↓
-Show Source
-↓
-Download PDF
-
----
-
-# 🏗 Architecture
-
-Teacher
-↓
-Streamlit UI
-↓
-Document Parser
-↓
-ChromaDB
-↓
-RAG Engine
-↓
-OpenRouter
-↓
-PDF Generator
-
----
-
-# 📂 Project Structure
-
-teacher-ai-assistant/
-
-app.py
-
-requirements.txt
-
-prompts.py
-
-generators.py
-
-pdf_generator.py
-
-utils.py
-
-document_parser.py
-
-chroma_manager.py
-
-rag_engine.py
-
-.streamlit/
-└── secrets.toml
-
-README.md
-
----
-
-# ⚙️ Technologies Used
-
-Frontend:
+## Frontend
 
 * Streamlit
 
-LLM:
+## LLM
 
-* OpenRouter
-* DeepSeek
+* Groq
+* Llama 3.3 70B Versatile
 
-Vector Database:
+## Retrieval
 
 * ChromaDB
+* Sentence Transformers
 
-Embeddings:
+## Search
 
-* BAAI/bge-small-en-v1.5
+* Tavily Search
 
-Document Processing:
-
-* PyPDF
-* python-docx
-
-Web Search:
-
-* Tavily
-
-PDF Generation:
+## PDF Generation
 
 * ReportLab
 
-AI Framework:
+---
 
-* LangChain
-* LangGraph (Future Upgrade)
+# 📦 Future Roadmap
+
+## Phase 2 — Enhanced NCF Intelligence
+
+### Full NCF 2023 Knowledge Base
+
+Planned:
+
+* NCF 2023 PDF Ingestion
+* Subject-wise Competency Mapping
+* Stage-wise Learning Outcomes
+* Curriculum Goal Alignment
+
+Benefits:
+
+* More accurate lesson plans
+* Better assessment design
+* Improved competency mapping
 
 ---
 
-# 🔑 Environment Variables
+### Panchpadi Learning Model
 
-Create Streamlit Secrets:
+Support:
 
-OPENROUTER_API_KEY
+1. Aditi
+2. Bodh
+3. Abhyas
+4. Prayog
+5. Prasar
 
-TAVILY_API_KEY
+Benefits:
 
-Example:
-
-OPENROUTER_API_KEY="your_key"
-
-TAVILY_API_KEY="your_key"
-
----
-
-# ▶️ Deployment
-
-GitHub
-↓
-Streamlit Community Cloud
-↓
-Live Website
+* Stronger NCF alignment
+* Better classroom structure
 
 ---
 
-# 👨‍🏫 Example Use Cases
+### 5E Learning Framework
 
-Example 1:
+Support:
 
-Upload Science Chapter
+* Engage
+* Explore
+* Explain
+* Elaborate
+* Evaluate
 
-Ask:
+Benefits:
 
-Explain Photosynthesis
-
-Result:
-
-AI explains using document content.
-
----
-
-Example 2:
-
-Generate Easy MCQs
-
-Result:
-
-AI creates topic-based MCQs.
+* More effective teaching strategies
 
 ---
 
-Example 3:
+## Phase 3 — Advanced AI Architecture
 
-Generate 50 Marks Question Paper
+### Redis Cache
 
-Result:
+Purpose:
 
-AI generates a complete exam paper.
+Cache frequently generated outputs.
 
----
+Benefits:
 
-Example 4:
-
-Create Lesson Plan
-
-Result:
-
-AI generates a classroom-ready teaching plan.
+* Faster response time
+* Reduced LLM costs
+* Better scalability
 
 ---
 
-# 🔮 Future Enhancements
+### Database Integration
 
-* LangGraph Agent
-* MCP Architecture
-* PostgreSQL Database
-* Multi-document Search
-* OCR Support
-* Multi-language Support
-* Student Dashboard
-* School Dashboard
-* Bloom's Taxonomy Integration
+Planned:
 
----
+* PostgreSQL
+* Supabase
 
-# 👤 Author
+Features:
 
-Akash Bauri
+* User Accounts
+* History Tracking
+* Saved Lesson Plans
+* Resource Management
 
-Founder – APPNA BANK
+Benefits:
 
-AI Freelancer
-
-* Invisible Technologies
-* Outlier AI
-
-Passionate about AI, Automation, Education Technology, and Intelligent Learning Systems.
+* Persistent storage
+* Better teacher experience
 
 ---
 
-# 📜 License
+### LangGraph Integration
 
-This project is intended for educational and research purposes.
+Purpose:
+
+Multi-step educational reasoning.
+
+Benefits:
+
+* Structured workflows
+* Better lesson planning
+* Smarter educational agents
+
+---
+
+### MCP (Model Context Protocol)
+
+Purpose:
+
+Connect external educational tools and knowledge systems.
+
+Benefits:
+
+* Dynamic curriculum access
+* Better context retrieval
+* Integration with future educational ecosystems
+
+---
+
+## Phase 4 — AI Teacher Agent Ecosystem
+
+Planned Agents:
+
+### Curriculum Agent
+
+Creates curriculum aligned resources.
+
+### Assessment Agent
+
+Generates exams and rubrics.
+
+### Lesson Planning Agent
+
+Creates detailed lesson plans.
+
+### Teaching Strategy Agent
+
+Suggests teaching methodologies.
+
+### Inclusive Education Agent
+
+Creates differentiated learning paths.
+
+---
+
+# 📈 Expected Final Output
+
+After future upgrades, the platform will generate:
+
+✅ NCF 2023 Aligned Lesson Plans
+
+✅ Competency Mapped Assessments
+
+✅ Curriculum Goal Mapping
+
+✅ Panchpadi Learning Structure
+
+✅ 5E Learning Framework
+
+✅ Art Integrated Activities
+
+✅ Game Based Learning Activities
+
+✅ Inclusive Teaching Strategies
+
+✅ Personalized Teacher Resources
+
+✅ Multi-Agent Educational Intelligence
+
+✅ Complete Classroom Ready Teaching Packages
+
+---
+
+# 🎯 Vision
+
+To become an AI-powered Teacher Copilot that helps educators create engaging, competency-based, and inclusive learning experiences aligned with NCF 2023 and NEP 2020 while reducing preparation time and improving teaching quality.
