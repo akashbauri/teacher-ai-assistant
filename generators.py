@@ -123,50 +123,140 @@ def generate_lesson_plan(
     prompt = f"""
 Create a complete NCF 2023 aligned lesson plan.
 
-TOPIC:
-{topic}
+# 3. Competencies
 
-STUDENT LEVEL:
-{student_level}
+Generate detailed competency mapping aligned with NCF 2023.
+
+For each competency include:
+
+* Competency Description
+* Classroom Application
+* Student Behaviour Indicators
+* Assessment Evidence
+
+## Critical Thinking
+
+Explain how students analyze, compare, infer, classify, evaluate, and draw conclusions.
+
+## Problem Solving
+
+Explain how students apply concepts to solve real-life situations and classroom challenges.
+
+## Communication Skills
+
+Explain how students express ideas through speaking, writing, discussion, presentation, and visual communication.
+
+## Collaboration
+
+Explain how students work effectively in pairs, teams, and group activities.
+
+## Creativity and Innovation
+
+Explain how students generate ideas, design projects, create models, and develop original solutions.
+
+## Self Learning
+
+Explain how students independently explore concepts and reflect on their own learning.
+
+## Digital Literacy
+
+Explain how students use technology responsibly and effectively for learning.
+
+## Observation and Inquiry
+
+Explain how students observe, investigate, explore, and ask meaningful questions.
+
+# Art Integrated Learning Competency
+
+Explain how art helps students understand the topic through creative expression.
 
 Generate:
 
-# Topic Information
+* Drawing Activity
+* Coloring Activity
+* Poster Making Activity
+* Craft Activity
+* Storytelling Activity
+* Drama / Role Play Activity
 
-# Learning Outcomes
+For each activity provide:
 
-# Competencies
+* Objective
+* Materials Required
+* Procedure
+* Expected Learning Outcome
 
-# Prior Knowledge
+# Game Based Learning Competency
 
-# Teaching Learning Materials
+Explain how games help students learn through play, participation, and engagement.
 
-# Activity Based Learning
+Generate:
 
-# Teacher Explanation Script
+## Individual Game
 
-# Step By Step Teaching Procedure
+Include:
 
-# Real Life Applications
+* Game Name
+* Rules
+* Learning Objective
+* Assessment Method
 
-# Inclusive Teaching Strategies
+## Pair Activity Game
 
-# Assessment
+Include:
 
-# Reflection
+* Game Name
+* Rules
+* Learning Objective
+* Assessment Method
 
-# Homework
+## Group Activity Game
 
-# Flow Chart
+Include:
 
-# Mind Map
+* Game Name
+* Rules
+* Learning Objective
+* Assessment Method
 
-Use teacher-friendly language.
-"""
+## Classroom Challenge
+
+Include:
+
+* Challenge Name
+* Procedure
+* Learning Objective
+* Assessment Method
+
+## Quiz Competition
+
+Include:
+
+* Quiz Format
+* Rules
+* Learning Objective
+* Assessment Method
+
+# Real Life Application Competency
+
+Generate at least 10 practical real-life applications.
+
+Explain how students can connect the concept to daily life, community, environment, home, school, and future learning.
+
+IMPORTANT:
+
+Art Integrated Learning and Game Based Learning are mandatory.
+
+Generate detailed classroom-ready activities.
+
+Do not give generic answers.
+
+Provide practical examples that teachers can directly use in the classroom.
+
 
     return generate_content(
         prompt,
-        2200
+        3200
     )
 
 
@@ -282,7 +372,7 @@ Use arrows and clean formatting.
 
     return generate_content(
         prompt,
-        1200
+        2200
     )
 
 
@@ -317,7 +407,7 @@ Use proper hierarchical structure.
 
     return generate_content(
         prompt,
-        1200
+        2200
     )
 
 
@@ -360,7 +450,7 @@ Use simple language.
 
     return generate_content(
         prompt,
-        1500
+        2500
     )
 
 
@@ -404,5 +494,5 @@ Provide:
 
     return generate_content(
         prompt,
-        2200
+        3200
     )
