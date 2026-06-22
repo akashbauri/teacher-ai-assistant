@@ -24,7 +24,7 @@ def generate_content(
 
 
 # ==========================================
-# LEARNING OUTCOMES
+# LEARNING OUTCOMES (UPDATED)
 # ==========================================
 
 def generate_learning_outcomes(
@@ -41,7 +41,20 @@ TOPIC:
 STUDENT LEVEL:
 {student_level}
 
+Structure:
+Curricular Goal
+↓
+Competencies
+↓
+Learning Outcomes
+↓
+Assessment Indicators
+
 Generate:
+
+# Curricular Goal
+
+# Competency Mapping
 
 # Knowledge Outcomes
 
@@ -52,7 +65,6 @@ Generate:
 # Assessment Indicators
 
 Use action verbs:
-
 - Explain
 - Identify
 - Compare
@@ -69,7 +81,7 @@ Use action verbs:
 
 
 # ==========================================
-# COMPETENCIES
+# COMPETENCIES (UPDATED)
 # ==========================================
 
 def generate_competencies(
@@ -86,23 +98,25 @@ TOPIC:
 STUDENT LEVEL:
 {student_level}
 
-Include:
-
+Include these Competencies:
 # Critical Thinking
-
 # Communication
-
 # Problem Solving
-
 # Collaboration
-
 # Observation
-
 # Creativity
-
 # Reasoning
+# Art Integrated Learning
+# Game Based Learning
+# Real Life Application
+# Inquiry Based Learning
+# Self Learning
 
-Explain each competency briefly.
+For every competency provide:
+- Description
+- Classroom Application
+- Student Behaviour Indicators
+- Assessment Evidence
 """
 
     return generate_content(
@@ -112,7 +126,7 @@ Explain each competency briefly.
 
 
 # ==========================================
-# LESSON PLAN
+# LESSON PLAN (UPDATED)
 # ==========================================
 
 def generate_lesson_plan(
@@ -121,57 +135,65 @@ def generate_lesson_plan(
 ):
 
     prompt = f"""
+TOPIC:
+{topic}
+
+STUDENT LEVEL:
+{student_level}
+
+IMPORTANT:
+Generate a highly detailed lesson plan.
+Minimum length: 3000+ words
+Do not generate generic content.
+Extract actual chapter name whenever possible.
+
 Create a complete NCF 2023 aligned lesson plan.
 
-# 3. Competencies
+# 1. Curricular Goal
+
+# 2. Competencies
+
+# 3. Learning Outcomes
+
+# 4. Assessment Indicators
+
+# 5. Competency Mapping
 
 Generate detailed competency mapping aligned with NCF 2023.
-
 For each competency include:
-
 * Competency Description
 * Classroom Application
 * Student Behaviour Indicators
 * Assessment Evidence
 
 ## Critical Thinking
-
 Explain how students analyze, compare, infer, classify, evaluate, and draw conclusions.
 
 ## Problem Solving
-
 Explain how students apply concepts to solve real-life situations and classroom challenges.
 
 ## Communication Skills
-
 Explain how students express ideas through speaking, writing, discussion, presentation, and visual communication.
 
 ## Collaboration
-
 Explain how students work effectively in pairs, teams, and group activities.
 
 ## Creativity and Innovation
-
 Explain how students generate ideas, design projects, create models, and develop original solutions.
 
 ## Self Learning
-
 Explain how students independently explore concepts and reflect on their own learning.
 
 ## Digital Literacy
-
 Explain how students use technology responsibly and effectively for learning.
 
 ## Observation and Inquiry
-
 Explain how students observe, investigate, explore, and ask meaningful questions.
 
 # Art Integrated Learning Competency
-
 Explain how art helps students understand the topic through creative expression.
 
-Generate:
-
+Generate Art Activities:
 * Drawing Activity
 * Coloring Activity
 * Poster Making Activity
@@ -180,88 +202,61 @@ Generate:
 * Drama / Role Play Activity
 
 For each activity provide:
-
 * Objective
 * Materials Required
 * Procedure
 * Expected Learning Outcome
 
 # Game Based Learning Competency
-
 Explain how games help students learn through play, participation, and engagement.
 
-Generate:
-
+Generate Game Based Activities:
 ## Individual Game
-
-Include:
-
-* Game Name
-* Rules
-* Learning Objective
-* Assessment Method
-
+Include: Game Name, Rules, Learning Objective, Assessment Method
 ## Pair Activity Game
-
-Include:
-
-* Game Name
-* Rules
-* Learning Objective
-* Assessment Method
-
+Include: Game Name, Rules, Learning Objective, Assessment Method
 ## Group Activity Game
-
-Include:
-
-* Game Name
-* Rules
-* Learning Objective
-* Assessment Method
-
+Include: Game Name, Rules, Learning Objective, Assessment Method
 ## Classroom Challenge
-
-Include:
-
-* Challenge Name
-* Procedure
-* Learning Objective
-* Assessment Method
-
+Include: Challenge Name, Procedure, Learning Objective, Assessment Method
 ## Quiz Competition
+Include: Quiz Format, Rules, Learning Objective, Assessment Method
 
-Include:
-
-* Quiz Format
-* Rules
-* Learning Objective
-* Assessment Method
+# Activity Details
+Generate structured execution paths for:
+- Individual Activity
+- Pair Activity
+- Group Activity
 
 # Real Life Application Competency
-
 Generate at least 10 practical real-life applications.
-
 Explain how students can connect the concept to daily life, community, environment, home, school, and future learning.
 
+# Reflection Activities
+Generate processing prompts and reflection checkpoints for students.
+
+# Assessment Rubrics
+Provide a comprehensive matrix marking across these levels:
+- Beginning
+- Developing
+- Proficient
+- Advanced
+
 IMPORTANT:
-
 Art Integrated Learning and Game Based Learning are mandatory.
-
 Generate detailed classroom-ready activities.
-
 Do not give generic answers.
-
 Provide practical examples that teachers can directly use in the classroom.
-
+"""
 
     return generate_content(
         prompt,
-        3200
+        4500
     )
 
 
 # ==========================================
-# TEACHING GUIDE
+# TEACHING GUIDE (UPDATED)
 # ==========================================
 
 def generate_teaching_guide(
@@ -286,19 +281,29 @@ Generate:
 
 # Chapter Overview
 
-# Learning Outcomes
+# Curricular Goal
 
 # Competencies
+
+# Learning Outcomes
 
 # Key Concepts
 
 # Teacher Introduction Script
+
+# Student Responses
 
 # Detailed Topic Explanation
 
 # Real Life Examples
 
 # Activity Based Learning
+
+# Art Activity
+
+# Game Activity
+
+# Reflection Activity
 
 # Student Engagement Questions
 
@@ -313,6 +318,8 @@ Generate:
 # Hard Questions
 
 # Assessment Suggestions
+
+# Assessment Rubric
 
 # Extension Activities
 
@@ -329,12 +336,12 @@ Explain as if training a teacher.
 
     return generate_content(
         prompt,
-        2500
+        3500
     )
 
 
 # ==========================================
-# FLOWCHART
+# FLOWCHART (UPDATED)
 # ==========================================
 
 def generate_flowchart(
@@ -348,14 +355,13 @@ TOPIC:
 {topic}
 
 Structure:
-
-Prerequisite Knowledge
+Prior Knowledge
 ↓
 Introduction
 ↓
-Core Concept
+Exploration
 ↓
-Teacher Explanation
+Concept Building
 ↓
 Activity
 ↓
@@ -366,6 +372,8 @@ Application
 Assessment
 ↓
 Reflection
+↓
+Real Life Connection
 
 Use arrows and clean formatting.
 """
@@ -377,7 +385,7 @@ Use arrows and clean formatting.
 
 
 # ==========================================
-# MIND MAP
+# MIND MAP (UPDATED)
 # ==========================================
 
 def generate_mindmap(
@@ -393,13 +401,17 @@ TOPIC:
 Include:
 
 Central Topic
-
-├── Core Concepts
-├── Learning Outcomes
+├── Curricular Goal
 ├── Competencies
+├── Learning Outcomes
+├── Core Concepts
 ├── Real Life Applications
 ├── Activity Ideas
+├── Art Activities
+├── Game Activities
+├── Reflection Activities
 ├── Assessment Ideas
+├── Assessment Rubrics
 └── Cross Curricular Connections
 
 Use proper hierarchical structure.
@@ -412,7 +424,7 @@ Use proper hierarchical structure.
 
 
 # ==========================================
-# CHAPTER SUMMARY
+# CHAPTER SUMMARY (UPDATED)
 # ==========================================
 
 def generate_chapter_summary(
@@ -441,6 +453,12 @@ Include:
 
 # Real Life Applications
 
+# Common Misconceptions
+
+# Frequently Asked Questions
+
+# Activity Suggestions
+
 # Quick Revision Notes
 
 # Summary
@@ -455,7 +473,7 @@ Use simple language.
 
 
 # ==========================================
-# IMPORTANT QUESTIONS
+# IMPORTANT QUESTIONS (UPDATED)
 # ==========================================
 
 def generate_important_questions(
@@ -472,27 +490,35 @@ Generate:
 
 # Easy Questions
 (Knowledge)
+Provide 10 Easy Questions.
 
 # Moderate Questions
 (Understanding & Application)
+Provide 10 Moderate Questions.
 
 # Hard Questions
 (Analysis & Evaluation)
+Provide 10 Hard Questions.
 
 # Competency Based Questions
-
-# Activity Based Questions
+Provide 10 Competency Based Questions.
 
 # Case Based Questions
+Provide 10 Case Based Questions.
 
-Provide:
+# Assertion & Reason Questions
+Provide 5 Assertion & Reason Questions.
 
-10 Easy Questions
-10 Moderate Questions
-10 Hard Questions
+# Multiple Correct Answer Questions
+Provide 5 Multiple Correct Answer Questions.
+
+# Real Life Application Questions
+Provide 5 Real Life Application Questions.
+
+# Activity Based Questions
 """
 
     return generate_content(
         prompt,
-        3200
+        4000
     )
