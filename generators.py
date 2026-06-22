@@ -1,87 +1,408 @@
 # ==========================================
-# llm_service.py
+# generators.py
 # ==========================================
 
-from groq import Groq
-from config import GROQ_API_KEY
-
-
-SYSTEM_PROMPT = """
-You are an expert NCF 2023 and NEP 2020 aligned AI Teacher Assistant.
-
-Always:
-
-- Explain like a teacher.
-- Use simple language.
-- Focus on conceptual understanding.
-- Promote competency-based learning.
-- Include learning outcomes whenever relevant.
-- Include competencies whenever relevant.
-- Include activity-based learning.
-- Include inclusive teaching strategies.
-- Avoid rote learning.
-- Encourage critical thinking.
-- Use classroom-friendly structure.
-"""
+from llm_service import call_llm
 
 
 # ==========================================
-# GROQ CLIENT
-# ==========================================
-
-def get_client():
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY not found")
-
-    return Groq(api_key=GROQ_API_KEY)
-
-
-# ==========================================
-# COMMON LLM FUNCTION
-# ==========================================
-
-def call_llm(
-    prompt: str,
-    max_tokens: int = 2000,
-    temperature: float = 0.3,
-):
-    try:
-        client = get_client()
-
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-        return f"Generation Error:\n\n{str(e)}"
-
-
-# ==========================================
-# GENERIC GENERATOR
+# COMMON GENERATOR
 # ==========================================
 
 def generate_content(
-    prompt_template: str,
-    variables: dict,
-    max_tokens: int = 2000
+    prompt,
+    max_tokens=1500
 ):
-    prompt = prompt_template.format(**variables)
+    """
+    Common wrapper for all generators.
+    """
 
     return call_llm(
-        prompt=prompt,
-        max_tokens=max_tokens
+        prompt,
+        max_tokens
+    )
+
+
+# ==========================================
+# LEARNING OUTCOMES
+# ==========================================
+
+def generate_learning_outcomes(
+    topic,
+    student_level="Class 5"
+):
+
+    prompt = f"""
+Generate NCF 2023 aligned Learning Outcomes.
+
+TOPIC:
+{topic}
+
+STUDENT LEVEL:
+{student_level}
+
+Generate:
+
+# Knowledge Outcomes
+
+# Skill Outcomes
+
+# Application Outcomes
+
+# Assessment Indicators
+
+Use action verbs:
+
+- Explain
+- Identify
+- Compare
+- Analyze
+- Apply
+- Evaluate
+- Create
+"""
+
+    return generate_content(
+        prompt,
+        1200
+    )
+
+
+# ==========================================
+# COMPETENCIES
+# ==========================================
+
+def generate_competencies(
+    topic,
+    student_level="Class 5"
+):
+
+    prompt = f"""
+Generate NCF 2023 aligned competencies.
+
+TOPIC:
+{topic}
+
+STUDENT LEVEL:
+{student_level}
+
+Include:
+
+# Critical Thinking
+
+# Communication
+
+# Problem Solving
+
+# Collaboration
+
+# Observation
+
+# Creativity
+
+# Reasoning
+
+Explain each competency briefly.
+"""
+
+    return generate_content(
+        prompt,
+        1200
+    )
+
+
+# ==========================================
+# LESSON PLAN
+# ==========================================
+
+def generate_lesson_plan(
+    topic,
+    student_level="Class 5"
+):
+
+    prompt = f"""
+Create a complete NCF 2023 aligned lesson plan.
+
+TOPIC:
+{topic}
+
+STUDENT LEVEL:
+{student_level}
+
+Generate:
+
+# Topic Information
+
+# Learning Outcomes
+
+# Competencies
+
+# Prior Knowledge
+
+# Teaching Learning Materials
+
+# Activity Based Learning
+
+# Teacher Explanation Script
+
+# Step By Step Teaching Procedure
+
+# Real Life Applications
+
+# Inclusive Teaching Strategies
+
+# Assessment
+
+# Reflection
+
+# Homework
+
+# Flow Chart
+
+# Mind Map
+
+Use teacher-friendly language.
+"""
+
+    return generate_content(
+        prompt,
+        2200
+    )
+
+
+# ==========================================
+# TEACHING GUIDE
+# ==========================================
+
+def generate_teaching_guide(
+    topic,
+    student_level="Class 5",
+    teaching_style="Beginner Friendly"
+):
+
+    prompt = f"""
+Create a complete NCF 2023 aligned teaching guide.
+
+TOPIC:
+{topic}
+
+STUDENT LEVEL:
+{student_level}
+
+TEACHING STYLE:
+{teaching_style}
+
+Generate:
+
+# Chapter Overview
+
+# Learning Outcomes
+
+# Competencies
+
+# Key Concepts
+
+# Teacher Introduction Script
+
+# Detailed Topic Explanation
+
+# Real Life Examples
+
+# Activity Based Learning
+
+# Student Engagement Questions
+
+# Common Misconceptions
+
+# Inclusive Teaching Strategies
+
+# Easy Questions
+
+# Moderate Questions
+
+# Hard Questions
+
+# Assessment Suggestions
+
+# Extension Activities
+
+# Homework
+
+# Recap
+
+# Flow Chart
+
+# Mind Map
+
+Explain as if training a teacher.
+"""
+
+    return generate_content(
+        prompt,
+        2500
+    )
+
+
+# ==========================================
+# FLOWCHART
+# ==========================================
+
+def generate_flowchart(
+    topic
+):
+
+    prompt = f"""
+Generate an NCF 2023 aligned educational flowchart.
+
+TOPIC:
+{topic}
+
+Structure:
+
+Prerequisite Knowledge
+↓
+Introduction
+↓
+Core Concept
+↓
+Teacher Explanation
+↓
+Activity
+↓
+Discussion
+↓
+Application
+↓
+Assessment
+↓
+Reflection
+
+Use arrows and clean formatting.
+"""
+
+    return generate_content(
+        prompt,
+        1200
+    )
+
+
+# ==========================================
+# MIND MAP
+# ==========================================
+
+def generate_mindmap(
+    topic
+):
+
+    prompt = f"""
+Generate an NCF 2023 aligned educational mind map.
+
+TOPIC:
+{topic}
+
+Include:
+
+Central Topic
+
+├── Core Concepts
+├── Learning Outcomes
+├── Competencies
+├── Real Life Applications
+├── Activity Ideas
+├── Assessment Ideas
+└── Cross Curricular Connections
+
+Use proper hierarchical structure.
+"""
+
+    return generate_content(
+        prompt,
+        1200
+    )
+
+
+# ==========================================
+# CHAPTER SUMMARY
+# ==========================================
+
+def generate_chapter_summary(
+    topic
+):
+
+    prompt = f"""
+Generate an NCF 2023 aligned chapter summary.
+
+TOPIC:
+{topic}
+
+Include:
+
+# Chapter Overview
+
+# Learning Outcomes
+
+# Competencies
+
+# Key Concepts
+
+# Important Definitions
+
+# Important Formulas
+
+# Real Life Applications
+
+# Quick Revision Notes
+
+# Summary
+
+Use simple language.
+"""
+
+    return generate_content(
+        prompt,
+        1500
+    )
+
+
+# ==========================================
+# IMPORTANT QUESTIONS
+# ==========================================
+
+def generate_important_questions(
+    topic
+):
+
+    prompt = f"""
+Generate NCF 2023 aligned important questions.
+
+TOPIC:
+{topic}
+
+Generate:
+
+# Easy Questions
+(Knowledge)
+
+# Moderate Questions
+(Understanding & Application)
+
+# Hard Questions
+(Analysis & Evaluation)
+
+# Competency Based Questions
+
+# Activity Based Questions
+
+# Case Based Questions
+
+Provide:
+
+10 Easy Questions
+10 Moderate Questions
+10 Hard Questions
+"""
+
+    return generate_content(
+        prompt,
+        2200
     )
