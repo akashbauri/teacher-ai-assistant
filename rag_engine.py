@@ -241,7 +241,7 @@ Explain as a teacher.
 
 
 # ==========================================
-# MCQ GENERATOR
+# MCQ GENERATOR (UPDATED PROMPT)
 # ==========================================
 
 def generate_document_mcqs(
@@ -261,7 +261,7 @@ def generate_document_mcqs(
         )
 
     prompt = f"""
-Generate NCF 2023 aligned MCQs.
+Generate NCF 2023 aligned competency-based MCQs.
 
 TOPIC:
 {topic}
@@ -272,38 +272,85 @@ DOCUMENT:
 DIFFICULTY:
 {difficulty}
 
+IMPORTANT:
+
+Generate a balanced mix of question types.
+
+Question Distribution:
+
+1. Single Correct Answer MCQs
+   - Only one option is correct.
+
+2. Multiple Correct Answer MCQs
+   - Two or more options are correct.
+
+3. All of the Above Questions
+   - All options are correct.
+
+4. None of the Above Questions
+   - None of the options are correct.
+
+5. Assertion and Reason Questions
+
+6. Case Based MCQs
+
+7. Application Based MCQs
+
+8. Critical Thinking MCQs
+
+9. Real Life Scenario MCQs
+
+10. Activity Based MCQs
+
 Generate:
 
 # Learning Outcomes
 
 # Competencies
 
-# Easy MCQs
-(Knowledge)
+# Easy Level MCQs (5)
 
-5 Questions
+# Moderate Level MCQs (5)
 
-# Moderate MCQs
-(Understanding & Application)
-
-5 Questions
-
-# Hard MCQs
-(Analysis & Evaluation)
-
-5 Questions
+# Hard Level MCQs (5)
 
 For every question provide:
 
-Question
+Question Type:
+(Single Correct / Multiple Correct / All of the Above /
+None of the Above / Case Based /
+Assertion Reason / Activity Based)
 
-Options A-D
+Question:
 
-Correct Answer
+A.
+B.
+C.
+D.
 
-Explanation
+Correct Answer:
 
-Avoid rote memorization.
+Explanation:
+
+Competency Assessed:
+
+Learning Outcome Assessed:
+
+IMPORTANT RULES:
+
+- Randomly mix all question types.
+- Do not make all questions single-correct.
+- At least 20% should be Multiple Correct.
+- At least 10% should be All of the Above.
+- At least 10% should be None of the Above.
+- Include competency-based assessment.
+- Include real-life examples.
+- Include case-based questions.
+- Include application-based questions.
+- Include activity-based questions.
+- Follow NCF 2023 guidelines.
+- Avoid rote memorization.
+- Focus on conceptual understanding and application.
 """
 
     return call_llm(
@@ -380,5 +427,5 @@ Focus on conceptual understanding.
 
     return call_llm(
         prompt,
-        max_tokens=2500
+        max_tokens=3500
     )
