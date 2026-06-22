@@ -24,6 +24,8 @@ from rag_engine import (
 
 # Content Generators
 from generators import (
+    generate_learning_outcomes,
+    generate_competencies,
     generate_lesson_plan,
     generate_teaching_guide,
     generate_flowchart,
@@ -57,7 +59,7 @@ from utils import (
 # =====================================================
 
 st.set_page_config(
-    page_title="AI Teacher Assistant",
+    page_title="NCF 2023 AI Teacher Assistant",
     page_icon="📚",
     layout="wide"
 )
@@ -70,7 +72,7 @@ initialize_history()
 
 with st.sidebar:
 
-    st.title("📚 AI Teacher Assistant")
+    st.title("📚 NCF 2023 AI Teacher Assistant")
 
     st.markdown("### Recent History")
 
@@ -104,24 +106,78 @@ with st.sidebar:
             "⚠️ No Document Indexed"
         )
 
+    # SIDEBAR DOCUMENT PREVIEW (UPDATED WITH 3000 CHARACTERS & 300 HEIGHT)
+    if "document_text" in st.session_state:
+
+        st.divider()
+
+        st.markdown(
+            "### 📑 Document Preview"
+        )
+
+        st.text_area(
+            "Contents",
+            st.session_state[
+                "document_text"
+            ][:3000],
+            height=300
+        )
+
+    if "document_text" in st.session_state:
+
+        text = st.session_state[
+            "document_text"
+        ]
+
+        st.markdown(
+            "### 📊 Document Statistics"
+        )
+
+        st.write(
+            f"Words: {len(text.split())}"
+        )
+
+        st.write(
+            f"Characters: {len(text)}"
+        )
+
+    if "document_chunks" in st.session_state:
+
+        chunks = st.session_state.get(
+            "document_chunks",
+            []
+        )
+
+        if chunks:
+
+            st.markdown(
+                "### 📚 First Topic Preview"
+            )
+
+            st.info(
+                chunks[0][:500]
+            )
+
 # =====================================================
 # HEADER
 # =====================================================
 
-st.title("📚 AI Teacher Assistant")
+st.title("📚 NCF 2023 AI Teacher Assistant")
 
-st.markdown("""
-### Upload a document and ask anything.
-
-#### Features
+st.markdown(
+    """
+### Features
 
 - PDF / DOCX / TXT Upload
 - FAISS Vector Search
 - Groq LLM
+- NCF 2023 Aligned Teaching Resources
 - Question Answering
 - Notes Generator
 - MCQ Generator
 - Question Paper Generator
+- Learning Outcomes Generator
+- Competencies Generator
 - Lesson Plan Generator
 - Teaching Guide Generator
 - Flow Chart Generator
@@ -130,7 +186,8 @@ st.markdown("""
 - Important Questions Generator
 - Tavily Web Search
 - PDF Download
-""")
+"""
+)
 
 # =====================================================
 # FILE UPLOAD
@@ -164,7 +221,15 @@ if uploaded_file:
                 uploaded_file
             )
 
+            st.session_state[
+                "document_text"
+            ] = text
+
             chunks = chunk_text(text)
+
+            st.session_state[
+                "document_chunks"
+            ] = chunks
 
             store_document_chunks(
                 chunks,
@@ -208,10 +273,10 @@ Chunks: {info['chunks']}
 student_level = st.selectbox(
     "Student Level",
     [
-        "Class 5",
-        "Class 6-8",
-        "Class 9-10",
-        "Class 11-12",
+        "Class 5 (Preparatory Stage)",
+        "Class 6-8 (Middle Stage)",
+        "Class 9-10 (Secondary Stage)",
+        "Class 11-12 (Senior Secondary)",
         "College"
     ]
 )
@@ -238,6 +303,8 @@ action = st.selectbox(
         "Generate Notes",
         "Generate MCQs",
         "Generate Question Paper",
+        "Generate Learning Outcomes",
+        "Generate Competencies",
         "Generate Lesson Plan",
         "Generate Teaching Guide",
         "Generate Flow Chart",
@@ -356,6 +423,38 @@ if st.button("🚀 Generate"):
                 )
 
                 pdf_name = "question_paper.pdf"
+
+            elif action == "Generate Learning Outcomes":
+
+                result = generate_learning_outcomes(
+                    query,
+                    student_level
+                )
+
+                source = "NCF 2023 AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "learning_outcomes.pdf"
+
+            elif action == "Generate Competencies":
+
+                result = generate_competencies(
+                    query,
+                    student_level
+                )
+
+                source = "NCF 2023 AI Generated"
+
+                pdf_data = notes_pdf(
+                    result,
+                    source
+                )
+
+                pdf_name = "competencies.pdf"
 
             elif action == "Generate Lesson Plan":
 
