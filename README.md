@@ -1,45 +1,38 @@
 # 📚 NCF 2023 AI Teacher Assistant
 
-An AI-powered educational platform that transforms educational documents into complete classroom-ready teaching resources aligned with NCF 2023 and NEP 2020 principles.
+An AI-powered Enterprise Knowledge Assistant for educators that transforms educational documents into classroom-ready teaching resources aligned with **NCF 2023** and **NEP 2020**.
+
+The platform combines **Retrieval-Augmented Generation (RAG)**, **Semantic Search**, and **Large Language Models (LLMs)** to help teachers create high-quality educational content in seconds.
 
 ---
 
-# 🚀 Overview
+# 🚀 Project Overview
 
-NCF 2023 AI Teacher Assistant helps teachers instantly generate:
+Teachers spend hours preparing lesson plans, notes, assessments, and classroom activities.
 
-* Lesson Plans
-* Teaching Guides
-* Study Notes
-* MCQs
-* Question Papers
-* Learning Outcomes
-* Competencies
-* Flow Charts
-* Mind Maps
-* Chapter Summaries
-* Important Questions
+NCF 2023 AI Teacher Assistant reduces this effort by allowing teachers to upload educational documents and instantly generate:
 
-from uploaded educational documents.
+* 📘 Study Notes
+* 📋 Lesson Plans
+* 👨‍🏫 Teaching Guides
+* 📝 Question Papers
+* ✅ MCQs
+* 🎯 Learning Outcomes
+* 🧠 Competencies
+* 🗺️ Mind Maps
+* 🔄 Flow Charts
+* 📖 Chapter Summaries
+* ❓ Important Questions
 
-The platform combines:
-
-* Document Understanding
-* Retrieval Augmented Generation (RAG)
-* AI-Powered Content Generation
-* Competency-Based Learning
-* Activity-Based Learning
-* Inclusive Teaching Practices
-
-to reduce teacher preparation time and improve classroom effectiveness.
+The system retrieves relevant information from uploaded documents using **Semantic Search** and generates context-aware educational content using **Groq LLM**.
 
 ---
 
 # ✨ Current MVP Features
 
-## 📄 Document Processing
+## 📄 Intelligent Document Processing
 
-Supports:
+Supported Formats:
 
 * PDF
 * DOCX
@@ -48,173 +41,264 @@ Supports:
 Capabilities:
 
 * Text Extraction
-* Smart Chunking
-* Vector Embeddings
-* Semantic Search
+* Smart Text Chunking
+* Semantic Embeddings
+* FAISS Vector Search
+* Enterprise Metadata Generation
 
 ---
 
-## 🧠 AI Powered Question Answering
+## 🤖 Enterprise RAG Pipeline
 
-Teachers can ask questions directly from uploaded content.
+The application follows a Retrieval-Augmented Generation architecture.
+
+Workflow:
+
+Document Upload
+↓
+Text Extraction
+↓
+Smart Chunking
+↓
+Sentence Embeddings
+↓
+FAISS Vector Index
+↓
+Semantic Retrieval
+↓
+Groq LLM
+↓
+Classroom Ready Response
+
+---
+
+## 💬 AI Question Answering
+
+Teachers can ask natural language questions directly from uploaded documents.
 
 Features:
 
-* Context-Aware Answers
-* Document-Based Responses
+* Document-based Answers
+* Context-aware Responses
+* Semantic Retrieval
 * Web Search Fallback
-* Teacher-Friendly Explanations
+* Teacher-friendly Explanations
+* Hallucination Reduction Prompting
 
 ---
 
-## 📚 Teaching Resource Generation
+# 📚 Classroom Resource Generation
 
-### Study Notes
+## 📘 Study Notes
 
-Generates:
+Automatically generates:
 
 * Chapter Overview
 * Learning Outcomes
 * Competencies
 * Key Concepts
+* Detailed Notes
 * Revision Notes
 * Summary
+* Real-life Examples
 
 ---
 
-### MCQ Generator
+## ✅ Competency-Based MCQs
 
-Supports:
+Supports multiple assessment styles:
 
 * Single Correct Answer
 * Multiple Correct Answers
 * All of the Above
 * None of the Above
 * Assertion & Reason
-* Case Based Questions
-* Activity Based Questions
-* Competency Based Questions
+* Case-Based Questions
+* Activity-Based Questions
+* Competency-Based Questions
+* Real-Life Scenario Questions
 
 ---
 
-### Question Paper Generator
+## 📝 Question Paper Generator
 
-Generates:
+Automatically creates:
 
 * Easy Questions
 * Moderate Questions
 * Hard Questions
-* Case Based Questions
-* Activity Based Questions
+* Case-Based Questions
+* Activity-Based Questions
 * Competency Mapping
+* Marks Distribution
+* Answer Key
 
 ---
 
-### Lesson Plan Generator
+## 📋 Lesson Plan Generator
 
-Generates:
+Generates complete classroom-ready lesson plans including:
 
 * Curricular Goals
-* Competencies
 * Learning Outcomes
-* Assessment Indicators
-* Teacher Scripts
-* Art Activities
-* Game Based Activities
+* Competency Mapping
+* Teacher Script
+* Student Activities
+* Art Integrated Learning
+* Game Based Learning
+* Activity Based Learning
 * Reflection Activities
 * Assessment Rubrics
-* Real Life Applications
+* Real-life Applications
 
 ---
 
-### Teaching Guide Generator
+## 👨‍🏫 Teaching Guide Generator
 
-Generates:
+Includes:
 
 * Teacher Instructions
 * Student Responses
 * Teaching Strategies
+* Classroom Activities
 * Misconceptions
 * Assessments
+* Homework
 * Extension Activities
 
 ---
 
-### Visual Learning Resources
+## 🗺️ Visual Learning Resources
 
-Generates:
+### Flow Charts
 
-#### Flow Charts
+Educational process flow including:
 
-Pedagogical Flow:
+* Prior Knowledge
+* Introduction
+* Exploration
+* Concept Building
+* Activity
+* Discussion
+* Assessment
+* Reflection
 
-Prior Knowledge
-↓
-Introduction
-↓
-Exploration
-↓
-Concept Building
-↓
-Activity
-↓
-Discussion
-↓
-Application
-↓
-Assessment
-↓
-Reflection
+### Mind Maps
 
-#### Mind Maps
+Automatically generates:
 
-Includes:
-
-* Concepts
-* Competencies
+* Core Concepts
 * Learning Outcomes
+* Competencies
 * Activities
 * Assessment
-* Real Life Applications
+* Real-life Applications
 
 ---
 
-# 🎯 NCF 2023 Alignment
+# 🎯 NCF 2023 & NEP 2020 Alignment
 
-The platform currently supports:
+Current implementation supports:
 
-* Competency Based Learning
-* Activity Based Learning
-* Inclusive Teaching
-* Real Life Applications
+* Competency-Based Learning
+* Activity-Based Learning
+* Inclusive Education
+* Inquiry-Based Learning
 * Critical Thinking
-* Communication Skills
 * Problem Solving
+* Communication Skills
 * Collaboration
 * Creativity
-* Inquiry Based Learning
 * Art Integrated Learning
 * Game Based Learning
+* Real-life Applications
 
 ---
 
-# 🏗️ Current Technology Stack
+# 🏗️ Enterprise RAG Features
+
+The platform includes enterprise-grade retrieval capabilities.
+
+### Source Citation
+
+Every AI response includes:
+
+* Document Name
+* Page Number
+* Chunk Number
+* Subject
+* Chapter
+
+---
+
+### Retrieval Metadata
+
+Displays:
+
+* Similarity Score
+* Confidence Score
+* Retrieval Score
+* Retrieval Rank
+* Retrieval Method
+* Generation Timestamp
+
+---
+
+### Explainable AI
+
+The system provides transparent answers by exposing retrieval metadata alongside every generated response.
+
+---
+
+# 📊 Document Intelligence Dashboard
+
+After uploading a document, the application displays:
+
+* Document Name
+* Word Count
+* Character Count
+* Indexed Chunks
+* Embedding Model
+* Vector Database
+* System Status
+* Response Time
+
+---
+
+# 📄 PDF Export
+
+Generated resources can be exported as PDF.
+
+Each exported document includes:
+
+* Generated Content
+* Source Information
+* Retrieval Metadata
+* Generation Timestamp
+
+---
+
+# ⚙️ Technology Stack
 
 ## Frontend
 
 * Streamlit
 
-## LLM
+## Large Language Model
 
-* Groq
+* Groq API
 * Llama 3.3 70B Versatile
 
-## Retrieval
+## Vector Search
 
-* ChromaDB
+* FAISS
+
+## Embeddings
+
 * Sentence Transformers
+* all-MiniLM-L6-v2
 
-## Search
+## Web Search
 
 * Tavily Search
 
@@ -224,108 +308,96 @@ The platform currently supports:
 
 ---
 
-# 📦 Future Roadmap
+# 🏛️ Current Architecture
 
-## Phase 2 — Enhanced NCF Intelligence
+User
+↓
+Streamlit UI
+↓
+Document Parser
+↓
+Chunk Generator
+↓
+Sentence Transformer
+↓
+FAISS Vector Index
+↓
+Semantic Retrieval
+↓
+Groq LLM
+↓
+Generated Educational Content
 
-### Full NCF 2023 Knowledge Base
+---
 
-Planned:
+# 🚀 Future Roadmap
 
-* NCF 2023 PDF Ingestion
+## Phase 2 — Enhanced Educational Intelligence
+
+Planned additions:
+
+* Complete NCF 2023 Knowledge Base
 * Subject-wise Competency Mapping
-* Stage-wise Learning Outcomes
 * Curriculum Goal Alignment
+* Panchpadi Learning Framework
+* 5E Learning Model
+* Bloom's Taxonomy Integration
 
 Benefits:
 
-* More accurate lesson plans
-* Better assessment design
+* Better lesson planning
 * Improved competency mapping
+* Higher curriculum alignment
 
 ---
 
-### Panchpadi Learning Model
-
-Support:
-
-1. Aditi
-2. Bodh
-3. Abhyas
-4. Prayog
-5. Prasar
-
-Benefits:
-
-* Stronger NCF alignment
-* Better classroom structure
-
----
-
-### 5E Learning Framework
-
-Support:
-
-* Engage
-* Explore
-* Explain
-* Elaborate
-* Evaluate
-
-Benefits:
-
-* More effective teaching strategies
-
----
-
-## Phase 3 — Advanced AI Architecture
+## Phase 3 — Enterprise AI Infrastructure
 
 ### Redis Cache
 
 Purpose:
 
-Cache frequently generated outputs.
+* Cache frequently generated responses
 
 Benefits:
 
-* Faster response time
-* Reduced LLM costs
+* Faster response times
+* Reduced LLM API costs
 * Better scalability
+* Lower latency
 
 ---
 
-### Database Integration
+### PostgreSQL / Supabase
 
-Planned:
-
-* PostgreSQL
-* Supabase
-
-Features:
+Purpose:
 
 * User Accounts
-* History Tracking
-* Saved Lesson Plans
-* Resource Management
+* Chat History
+* Saved Resources
+* Document Management
+* Analytics
 
 Benefits:
 
 * Persistent storage
-* Better teacher experience
+* Personalized teacher experience
 
 ---
 
-### LangGraph Integration
+### LangGraph
 
 Purpose:
 
-Multi-step educational reasoning.
+* Multi-step AI reasoning
+* Educational workflow orchestration
+* Intelligent planning
 
 Benefits:
 
-* Structured workflows
-* Better lesson planning
-* Smarter educational agents
+* Smarter lesson planning
+* Better educational reasoning
+* Agent-based workflows
 
 ---
 
@@ -333,70 +405,66 @@ Benefits:
 
 Purpose:
 
-Connect external educational tools and knowledge systems.
+Connect external educational systems and tools.
 
 Benefits:
 
-* Dynamic curriculum access
-* Better context retrieval
-* Integration with future educational ecosystems
+* Curriculum APIs
+* External knowledge integration
+* Tool interoperability
+* Future-ready architecture
 
 ---
 
-## Phase 4 — AI Teacher Agent Ecosystem
+## Phase 4 — Multi-Agent Teacher Ecosystem
 
-Planned Agents:
+Planned AI Agents:
 
-### Curriculum Agent
-
-Creates curriculum aligned resources.
-
-### Assessment Agent
-
-Generates exams and rubrics.
-
-### Lesson Planning Agent
-
-Creates detailed lesson plans.
-
-### Teaching Strategy Agent
-
-Suggests teaching methodologies.
-
-### Inclusive Education Agent
-
-Creates differentiated learning paths.
+* Curriculum Agent
+* Lesson Planning Agent
+* Assessment Agent
+* Teaching Strategy Agent
+* Inclusive Education Agent
+* Classroom Activity Agent
+* Student Performance Analysis Agent
 
 ---
 
-# 📈 Expected Final Output
+# 📈 Expected Final Capabilities
 
-After future upgrades, the platform will generate:
+The complete platform will provide:
 
-✅ NCF 2023 Aligned Lesson Plans
-
-✅ Competency Mapped Assessments
-
-✅ Curriculum Goal Mapping
-
-✅ Panchpadi Learning Structure
-
-✅ 5E Learning Framework
-
-✅ Art Integrated Activities
-
-✅ Game Based Learning Activities
-
-✅ Inclusive Teaching Strategies
-
-✅ Personalized Teacher Resources
-
-✅ Multi-Agent Educational Intelligence
-
-✅ Complete Classroom Ready Teaching Packages
+* ✅ Enterprise Knowledge Assistant
+* ✅ NCF 2023 Aligned Teaching Resources
+* ✅ Competency-Based Assessments
+* ✅ Curriculum Goal Mapping
+* ✅ Panchpadi Learning Framework
+* ✅ 5E Learning Framework
+* ✅ Bloom's Taxonomy Integration
+* ✅ Explainable AI Responses
+* ✅ Multi-Agent Educational Intelligence
+* ✅ Personalized Teacher Workspace
+* ✅ Enterprise AI Infrastructure
 
 ---
 
 # 🎯 Vision
 
-To become an AI-powered Teacher Copilot that helps educators create engaging, competency-based, and inclusive learning experiences aligned with NCF 2023 and NEP 2020 while reducing preparation time and improving teaching quality.
+Our vision is to build an **AI Teacher Copilot** that empowers educators with intelligent, explainable, and curriculum-aligned teaching assistance.
+
+By combining **Enterprise RAG**, **Semantic Search**, **LLMs**, and future technologies such as **Redis**, **LangGraph**, **MCP**, and **PostgreSQL**, the platform aims to become a comprehensive educational assistant that significantly reduces teacher preparation time while improving classroom quality, engagement, and learning outcomes.
+
+---
+
+# 👨‍💻 Built With
+
+* Streamlit
+* Groq
+* FAISS
+* Sentence Transformers
+* ReportLab
+* Tavily Search
+* NCF 2023
+* NEP 2020
+
+**Version:** 1.0 MVP
