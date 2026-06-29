@@ -33,7 +33,7 @@ def store_document_chunks(
         if not chunks:
             return False
 
-        # Generate structural identity indicators for ecosystem routing
+        # Generate enterprise identification and audit markers
         document_id = str(uuid.uuid4())
         uploaded_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         total_chunks = len(chunks)
@@ -57,7 +57,7 @@ def store_document_chunks(
             embeddings
         )
 
-        # Generate future-proof structural metadata architecture
+        # Generate comprehensive enterprise metadata architecture
         metadata = []
         for i, chunk in enumerate(chunks):
             word_count = len(chunk.split())
@@ -66,6 +66,7 @@ def store_document_chunks(
             metadata.append({
                 "document": document_name,
                 "document_id": document_id,
+                "document_version": 1,
                 "page": (
                     page_numbers[i]
                     if page_numbers and i < len(page_numbers)
@@ -79,7 +80,9 @@ def store_document_chunks(
                 "word_count": word_count,
                 "character_count": character_count,
                 "embedding_model": "all-MiniLM-L6-v2",
-                "embedding_dimension": dimension
+                "embedding_dimension": dimension,
+                "embedding": embeddings[i].tolist(),
+                "retrieval_method": "FAISS Semantic Search"
             })
 
         st.session_state["faiss_index"] = index
@@ -128,7 +131,7 @@ def search_document(
             []
         )
         
-        # Defensive metadata lookup to avoid State/Key errors
+        # Defensive metadata lookup to prevent state KeyErrors
         session_metadata = st.session_state.get(
             "document_metadata", 
             []
@@ -143,16 +146,20 @@ def search_document(
                 if distance < 2.0:
                     similarity = max(0, round(1 - (distance / 2), 2))
                     
-                    # Safe baseline floor matching requirements
-                    confidence = max(70, round(similarity * 100))
+                    # Enterprise Confidence Cap: 70% floor, 99% ceiling
+                    confidence = min(99, max(70, round(similarity * 100)))
                     
-                    # Fallback assignment engine for safety
+                    # Calculate system evaluation score
+                    retrieval_score = round(1 / (1 + distance), 4)
+                    
+                    # Safe fallback block configuration
                     if idx < len(session_metadata):
                         chunk_metadata = session_metadata[idx]
                     else:
                         chunk_metadata = {
                             "document": "Unknown",
                             "document_id": "Unknown",
+                            "document_version": 1,
                             "page": "Unknown",
                             "chunk": i + 1,
                             "total_chunks": len(chunks),
@@ -162,7 +169,9 @@ def search_document(
                             "word_count": len(chunks[idx].split()),
                             "character_count": len(chunks[idx]),
                             "embedding_model": "all-MiniLM-L6-v2",
-                            "embedding_dimension": 384
+                            "embedding_dimension": 384,
+                            "embedding": [],
+                            "retrieval_method": "FAISS Semantic Search"
                         }
 
                     results.append({
@@ -170,9 +179,17 @@ def search_document(
                         "distance": float(distance),
                         "similarity": similarity,
                         "confidence": confidence,
+                        "retrieval_score": retrieval_score,
                         "rank": i + 1,
+                        "retrieved_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "metadata": chunk_metadata
                     })
+
+        # Deterministic quality sorting: sort descending by similarity, then retrieval_score
+        results.sort(
+            key=lambda x: (x["similarity"], x["retrieval_score"]),
+            reverse=True
+        )
 
         return results
 
@@ -223,6 +240,7 @@ def get_source_information(
     return {
         "document": item["metadata"]["document"],
         "document_id": item["metadata"]["document_id"],
+        "document_version": item["metadata"]["document_version"],
         "page": item["metadata"]["page"],
         "chunk": item["metadata"]["chunk"],
         "total_chunks": item["metadata"]["total_chunks"],
@@ -230,10 +248,15 @@ def get_source_information(
         "subject": item["metadata"]["subject"],
         "similarity": item["similarity"],
         "confidence": item["confidence"],
+        "retrieval_score": item["retrieval_score"],
         "rank": item["rank"],
+        "retrieved_at": item["retrieved_at"],
         "uploaded_at": item["metadata"]["uploaded_at"],
         "word_count": item["metadata"]["word_count"],
-        "character_count": item["metadata"]["character_count"]
+        "character_count": item["metadata"]["character_count"],
+        "embedding_model": item["metadata"]["embedding_model"],
+        "embedding_dimension": item["metadata"]["embedding_dimension"],
+        "retrieval_method": item["metadata"]["retrieval_method"]
     }
 
 
