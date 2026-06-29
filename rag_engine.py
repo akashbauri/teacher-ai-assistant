@@ -1,10 +1,10 @@
-# ==========================================
-# rag_engine.py
-# ==========================================
-
 import traceback
+from datetime import datetime
 
-from chroma_manager import get_context
+from chroma_manager import (
+    get_context,
+    get_source_information
+)
 
 from utils import (
     search_web,
@@ -25,12 +25,10 @@ def get_document_context(
     """
     Retrieve context from ChromaDB.
     """
-
     context = get_context(
         query,
         top_k=top_k
     )
-
     return context.strip()
 
 
@@ -43,7 +41,6 @@ def build_education_prompt(
     context,
     student_level
 ):
-
     return f"""
 Create a complete NCF 2023 aligned explanation.
 
@@ -97,6 +94,17 @@ Hard Questions
 Use simple language.
 
 Focus on conceptual understanding.
+
+IMPORTANT INSTRUCTIONS
+Use the uploaded document as the PRIMARY source.
+Never invent facts that are not present inside the retrieved document.
+If information is missing from the uploaded document, clearly state:
+"Information not available in the uploaded document."
+Prefer conceptual understanding.
+Generate classroom-ready explanations.
+Follow NCF 2023 and NEP 2020.
+Avoid hallucinations.
+Always explain like an experienced teacher.
 """
 
 
@@ -108,19 +116,15 @@ def rag_answer(
     question,
     student_level="Class 5"
 ):
-
     try:
-
         # -----------------------------
         # ChromaDB Search
         # -----------------------------
-
         context = get_document_context(
             question
         )
 
         if context:
-
             prompt = build_education_prompt(
                 question,
                 context,
@@ -129,18 +133,28 @@ def rag_answer(
 
             answer = call_llm(
                 prompt,
-                max_tokens=1800
+                max_tokens=2500
+            )
+
+            # Extract rich enterprise metadata for traceability
+            source_info = get_source_information(
+                question
             )
 
             return {
                 "answer": answer,
-                "source": "Document Knowledge Base"
+                "source": "Document Knowledge Base",
+                "source_info": source_info,
+                "retrieval": {
+                    "method": "FAISS Semantic Search",
+                    "chunks_used": 5
+                },
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
 
         # -----------------------------
         # Web Search Fallback
         # -----------------------------
-
         web_results = search_web(
             question
         )
@@ -157,19 +171,23 @@ def rag_answer(
 
         answer = call_llm(
             prompt,
-            max_tokens=1800
+            max_tokens=2500
         )
 
         return {
             "answer": answer,
-            "source": "Web Search"
+            "source": "Web Search",
+            "source_info": None,
+            "web_results": web_results,
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
     except Exception:
-
         return {
             "answer": traceback.format_exc(),
-            "source": "Error"
+            "source": "Error",
+            "source_info": None,
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
 
@@ -181,13 +199,11 @@ def generate_document_notes(
     topic,
     student_level="Class 5"
 ):
-
     context = get_document_context(
         topic
     )
 
     if not context:
-
         return (
             "No relevant content found "
             "in uploaded document."
@@ -248,13 +264,11 @@ def generate_document_mcqs(
     topic,
     difficulty="Mixed"
 ):
-
     context = get_document_context(
         topic
     )
 
     if not context:
-
         return (
             "No relevant content found "
             "in uploaded document."
@@ -368,13 +382,11 @@ def generate_document_question_paper(
     marks=20,
     difficulty="Mixed"
 ):
-
     context = get_document_context(
         topic
     )
 
     if not context:
-
         return (
             "No relevant content found "
             "in uploaded document."
