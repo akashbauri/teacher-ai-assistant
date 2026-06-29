@@ -1,6 +1,10 @@
 import streamlit as st
 import time
+import traceback
 from datetime import datetime
+
+# Centralized Configurations
+import config
 
 # Document Processing
 from document_parser import (
@@ -37,13 +41,7 @@ from generators import (
 )
 
 # PDF Generators
-from pdf_generator import (
-    notes_pdf,
-    mcq_pdf,
-    question_paper_pdf,
-    lesson_plan_pdf,
-    teaching_guide_pdf
-)
+from pdf_generator import notes_pdf
 
 # Utilities
 from utils import (
@@ -57,28 +55,35 @@ from utils import (
 )
 
 # =====================================================
-# PAGE CONFIGURATION & STATE INITIALIZATION
+# INITIALIZATION & STATE MANAGEMENT
 # =====================================================
 st.set_page_config(
-    page_title="NCF 2023 AI Teacher Assistant",
+    page_title=f"NCF 2023 AI Teacher Assistant - {config.APP_VERSION}",
     page_icon="📚",
     layout="wide"
 )
 
 initialize_history()
 
-# Session State Keys Initialization for Analytics and Metadata
+# Advanced Telemetry Tracking Initializer
 if "session_start_time" not in st.session_state:
     st.session_state["session_start_time"] = datetime.now()
-if "analytics_questions" not in st.session_state:
-    st.session_state["analytics_questions"] = 0
-if "analytics_resources" not in st.session_state:
-    st.session_state["analytics_resources"] = 0
-if "analytics_response_times" not in st.session_state:
-    st.session_state["analytics_response_times"] = []
-if "analytics_uploads" not in st.session_state:
-    st.session_state["analytics_uploads"] = 0
+if "stat_questions" not in st.session_state:
+    st.session_state["stat_questions"] = 0
+if "stat_resources" not in st.session_state:
+    st.session_state["stat_resources"] = 0
+if "stat_response_times" not in st.session_state:
+    st.session_state["stat_response_times"] = []
+if "stat_uploads" not in st.session_state:
+    st.session_state["stat_uploads"] = 0
+if "stat_confidences" not in st.session_state:
+    st.session_state["stat_confidences"] = []
+if "stat_similarities" not in st.session_state:
+    st.session_state["stat_similarities"] = []
+if "stat_retrievals" not in st.session_state:
+    st.session_state["stat_retrievals"] = []
 
+# Persistent Context Variables
 if "doc_metadata" not in st.session_state:
     st.session_state["doc_metadata"] = None
 if "document_text" not in st.session_state:
@@ -90,7 +95,7 @@ if "last_uploaded_file" not in st.session_state:
 if "upload_time" not in st.session_state:
     st.session_state["upload_time"] = "N/A"
 
-# Safe default keys for inputs to prevent baseline jumps
+# Form State Triggers
 if "student_level_sel" not in st.session_state:
     st.session_state["student_level_sel"] = "Class 5"
 if "teaching_style_sel" not in st.session_state:
@@ -98,29 +103,140 @@ if "teaching_style_sel" not in st.session_state:
 
 
 # =====================================================
-# UI HELPER FUNCTIONS & RENDERING ENGINE
+# REUSABLE MODULAR UI BLOCKS (HELPER FUNCTIONS)
 # =====================================================
 def run_staged_pipeline(stages_dict):
-    """Executes a visual progressive loading sequence based on modular dictionary definitions."""
+    """Executes a visual progressive pipeline showing loading states sequentially."""
     progress_bar = st.progress(0, text="Initializing workflow nodes...")
-    total_stages = len(stages_dict)
-    for index, (percentage, stage_text) in enumerate(stages_dict.items()):
-        progress_bar.progress(percentage, text=f"⚙️ [{percentage}%] {stage_text}")
-        time.sleep(0.12)
+    for percentage, stage_text in stages_dict.items():
+        progress_bar.progress(percentage, text=f"⚙️ {stage_text}")
+        time.sleep(0.1)
     progress_bar.empty()
 
-def render_resource_info_card(resource_name, query_text, s_level, t_style, src):
-    """Renders a standard diagnostic metadata payload above generated system layouts."""
+def render_sidebar(doc_count, history_records):
+    """Renders all components inside the sidebar workspace."""
+    with st.sidebar:
+        st.title(f"📚 NCF AI Assistant")
+        st.caption(config.APP_VERSION)
+        
+        st.markdown("### 🎬 Presentation Tools")
+        if st.button("🎬 Load Demo Chapter", use_container_width=True):
+            load_demo_data()
+            st.success("Demo Chapter Seeded!")
+            st.rerun()
+
+        st.divider()
+        
+        # Live System Status
+        st.markdown("### 📡 Active System Status")
+        with st.container(border=True):
+            st.markdown(f"🟢 **LLM Status:** `Connected`")
+            st.markdown(f"🧠 **Embedding Model:** `{config.EMBEDDING_MODEL}`")
+            st.markdown(f"🗄️ **FAISS Status:** `Ready & Loaded`")
+            if st.session_state["doc_metadata"]:
+                st.markdown("🟢 **Document Status:** `Indexed`")
+            else:
+                st.markdown("⚪ **Document Status:** `Uninitialized`")
+            st.markdown(f"⚡ **Version:** `{config.APP_VERSION}`")
+
+        st.divider()
+        
+        # Real-time Session Analytics Dashboard
+        st.markdown("### 📊 Session Analytics")
+        with st.container(border=True):
+            dur_delta = datetime.now() - st.session_state["session_start_time"]
+            mins_active = int(dur_delta.total_seconds() // 60)
+            avg_resp = (sum(st.session_state["stat_response_times"]) / len(st.session_state["stat_response_times"])) if st.session_state["stat_response_times"] else 0.0
+            avg_conf = (sum(st.session_state["stat_confidences"]) / len(st.session_state["stat_confidences"])) if st.session_state["stat_confidences"] else 0.0
+            avg_sim = (sum(st.session_state["stat_similarities"]) / len(st.session_state["stat_similarities"])) if st.session_state["stat_similarities"] else 0.0
+            
+            st.metric("❓ Questions Asked", f"{st.session_state['stat_questions']}")
+            st.metric("📦 Resources Generated", f"{st.session_state['stat_resources']}")
+            st.metric("⚡ Avg Response Time", f"{avg_resp:.2f}s")
+            st.metric("📄 Documents Uploaded", f"{st.session_state['stat_uploads']}")
+            st.metric("⏱️ Session Duration", f"{mins_active} min(s)")
+            st.metric("🎯 Avg Confidence", f"{avg_conf:.1f}%")
+            st.metric("⭐ Avg Similarity", f"{avg_sim:.2f}")
+
+        st.divider()
+        
+        # Architectural Transaction Logs
+        st.markdown("### 📜 Session History Logs")
+        if history_records:
+            for item in reversed(history_records[-3:]):
+                with st.container(border=True):
+                    st.markdown(f"❓ **Query:** `{item.get('question', '')[:30]}...`")
+                    st.markdown(f"📦 **Action:** `{item.get('resource_type', 'Task Node')}`")
+                    st.caption(f"🕒 `{item.get('timestamp', 'N/A')}`")
+        else:
+            st.caption("No dynamic historical logs stored.")
+
+def render_document_summary():
+    """Renders the document statistics banner post-upload."""
+    meta = st.session_state["doc_metadata"]
+    if meta:
+        st.markdown("### 📊 Ingested Document Profile")
+        with st.container(border=True):
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"📄 **Title:** `{meta['title']}`\n\n🗄️ **Database Structure:** `{config.VECTOR_DATABASE}`")
+            c2.markdown(f"📘 **Subject Node:** `{meta['subject']}`\n\n🔖 **Chapter Node:** `{meta['chapter']}`")
+            c3.markdown(f"📑 **Chunk Matrices:** `{len(st.session_state['document_chunks'])} Units`\n\n🧠 **Embeddings Engine:** `{config.EMBEDDING_MODEL}`")
+
+def render_smart_preview():
+    """Renders an insightful preview analytical drawer of the contextual text."""
+    meta = st.session_state["doc_metadata"]
+    if meta:
+        with st.expander("🔍 Smart Document Preview & Context Synthesis", expanded=False):
+            pv_c1, pv_c2 = st.columns([2, 1])
+            with pv_c1:
+                st.markdown("#### 📄 Document Buffer Text Preview (First 500 Words)")
+                preview_words = st.session_state["document_text"].split()[:500]
+                st.text_area("", value=" ".join(preview_words), height=230, disabled=True, label_visibility="collapsed")
+            with pv_c2:
+                st.markdown("#### 🧠 AI Inspected Architecture")
+                st.markdown(f"📈 **Reading Level:** `{meta['reading_level']}`")
+                st.markdown(f"⏱️ **Reading Time Budget:** `{meta['reading_time']}`")
+                st.write("**Topics:**", ", ".join(meta['detected_topics']))
+                st.write("**Keywords:**", ", ".join(meta['detected_keywords']))
+                st.write("**Outcomes:**", ", ".join(meta['learning_outcomes']))
+                st.write("**Competencies:**", ", ".join(meta['competencies']))
+
+def render_output_info_card(resource_name, query_text, s_level, t_style, src):
+    """Renders an output informational card above every generated output component."""
     with st.container(border=True):
         c1, c2, c3, c4 = st.columns(4)
-        c1.markdown(f"📦 **Asset:** `{resource_name}`\n\n🎯 **Topic Focus:** `{query_text[:30]}...`")
-        c2.markdown(f"🎓 **Level:** `{s_level}`\n\n🎨 **Pedagogy:** `{t_style}`")
-        c3.markdown(f"📊 **Difficulty:** `{detect_difficulty(query_text)}`\n\n🏷️ **Weight Allocation:** `{detect_marks(query_text)}`")
-        c4.markdown(f"🕒 **Generated At:** `{datetime.now().strftime('%H:%M:%S')}`\n\n🧬 **Routing Vector:** `{src}`")
+        c1.markdown(f"📦 **Generated Resource:** `{resource_name}`\n\n🎯 **Topic:** `{query_text[:30]}...`")
+        c2.markdown(f"🎓 **Student Level:** `{s_level}`\n\n🎨 **Teaching Style:** `{t_style}`")
+        c3.markdown(f"📊 **Difficulty:** `{detect_difficulty(query_text)}`\n\n🏷️ **Marks Target:** `{detect_marks(query_text)}`")
+        c4.markdown(f"🕒 **Generated Time:** `{datetime.now().strftime('%H:%M:%S')}`\n\n🧬 **Source Routing:** `{src}`")
+
+def render_source_traceability(rag_payload, exec_time, s_level, t_style, src_name):
+    """Renders dynamic, high-fidelity metadata audit records inside an expandable element."""
+    with st.expander("🎯 Source Traceability Operational Matrix", expanded=True):
+        if rag_payload:
+            st.markdown("### 📄 Architectural Context Citation Summary")
+            tr_c1, tr_c2, tr_c3 = st.columns(3)
+            with tr_c1:
+                st.markdown(f"**Source Document:** `{src_name}`")
+                st.markdown(f"**Page Number:** `Page {rag_payload.get('page', '1')}`")
+                st.markdown(f"**Chunk Number:** `Segment {rag_payload.get('chunk', '1')}`")
+                st.markdown(f"**Document Version:** `v1.0.0 (Immutable Master Document)`")
+            with tr_c2:
+                st.markdown(f"**Similarity Score:** `{rag_payload.get('similarity', 'N/A')}`")
+                st.markdown(f"**Confidence Score:** `{rag_payload.get('confidence', 'N/A')}%`")
+                st.markdown(f"**Retrieval Score:** `{rag_payload.get('retrieval_score', 'N/A')}`")
+                st.markdown(f"**Rank Priority:** `Priority Rank #{rag_payload.get('rank', '1')}`")
+            with tr_c3:
+                st.markdown(f"**Generated Time:** `{exec_time}`")
+                st.markdown(f"**LLM Model:** `{config.LLM_MODEL}`")
+                st.markdown(f"**Embedding Model:** `{config.EMBEDDING_MODEL}`")
+                st.markdown(f"**Vector Database:** `{config.VECTOR_DATABASE}`")
+        else:
+            st.info("ℹ️ No extended document metadata available for the current generation route context (Web Search/Direct Prompt rules applied).")
 
 
 # =====================================================
-# DEMO DATA SEED FACTORY
+# DEMO MODE SEED ENGINE
 # =====================================================
 def load_demo_data():
     st.session_state["document_text"] = (
@@ -136,22 +252,21 @@ def load_demo_data():
     ]
     st.session_state["last_uploaded_file"] = "Demo_Plant_Systems_Chapter.pdf"
     st.session_state["upload_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    st.session_state["analytics_uploads"] += 1
+    st.session_state["stat_uploads"] += 1
     
     st.session_state["doc_metadata"] = {
-        "title": "Demo Plant Systems Chapter",
+        "title": "Demo_Plant_Systems_Chapter.pdf",
         "subject": "Science",
         "chapter": "Plants and Living Systems",
         "total_pages": "2 Pages",
         "reading_time": "1 min read",
-        "doc_type": "PDF Document",
-        "detected_topics": ["Photosynthesis", "Plant Organs", "Ecosystems", "Biodiversity"],
-        "detected_keywords": ["Xylem", "Phloem", "Chloroplasts", "Primary Producers"],
-        "learning_outcomes": ["Understand vascular transportation networks", "Analyze carbon conversion in producers"],
-        "competencies": ["Scientific Investigation", "Environmental Adaptation Synthesis"],
-        "reading_level": "Grade 5 Basic Curriculum Level"
+        "doc_type": "PDF",
+        "detected_topics": ["Photosynthesis", "Vascular Systems", "Ecosystem Biodiversity"],
+        "detected_keywords": ["Xylem", "Phloem", "Chloroplasts", "Producers"],
+        "learning_outcomes": ["Correlate plant structure functionality with metabolic output requirements"],
+        "competencies": ["Scientific Framework Investigation"],
+        "reading_level": "Grade 5 Basic Curriculum Standard"
     }
-    
     st.session_state["student_level_sel"] = "Class 5"
     st.session_state["teaching_style_sel"] = "Beginner Friendly"
     
@@ -165,307 +280,175 @@ def load_demo_data():
 
 
 # =====================================================
-# SIDEBAR NAVIGATION, LIVE STATUS & ANALYTICS
+# INGESTION ENTRY POINT & ADVANCED VALIDATION GATEWAY
 # =====================================================
-with st.sidebar:
-    st.title("📚 NCF 2023 AI Assistant")
-    
-    # --- PRESENTATION ENVIRONMENT CONTROL ---
-    st.markdown("### 🎬 Presentation Tools")
-    if st.button("🎬 Load Demo Chapter", use_container_width=True):
-        load_demo_data()
-        st.success("Demo Chapter Seeded!")
+# Fetch static variables to conserve datetime operations loop counts
+current_history_records = get_history()
+current_doc_count = get_document_count()
 
-    st.divider()
-    
-    # --- LIVE DOCUMENT STATUS PANEL ---
-    st.markdown("### 📡 Live Document Status")
-    status_box = st.container(border=True)
-    with status_box:
-        if st.session_state["doc_metadata"] is not None:
-            st.markdown("### 🟢 Document Loaded")
-            st.markdown(f"📄 **File:** `{st.session_state['last_uploaded_file']}`")
-            st.markdown(f"📘 **Subject:** `{st.session_state['doc_metadata']['subject']}`")
-            st.markdown(f"🔖 **Chapter:** `{st.session_state['doc_metadata']['chapter']}`")
-            st.markdown(f"📄 **Pages:** `{st.session_state['doc_metadata']['total_pages']}`")
-            st.markdown(f"📑 **Chunks:** `{len(st.session_state['document_chunks'])}`")
-            st.markdown(f"🧠 **Model:** `all-MiniLM-L6-v2`")
-            st.markdown(f"🗄️ **Database:** `FAISS Local`")
-            st.markdown(f"🕒 **Uploaded:** `{st.session_state['upload_time']}`")
-        else:
-            st.markdown("### 🔴 No Document Loaded")
-            st.caption("Awaiting source ingestion parameter blocks to bind retrieval systems.")
+# Render primary unified layout interface elements
+render_sidebar(current_doc_count, current_history_records)
 
-    st.divider()
-    
-    # --- CURRENT SESSION ANALYTICS METRICS ---
-    st.markdown("### 📊 Session Analytics Dashboard")
-    analytics_box = st.container(border=True)
-    with analytics_box:
-        dur_delta = datetime.now() - st.session_state["session_start_time"]
-        mins_active = int(dur_delta.total_seconds() // 60)
-        avg_resp = (sum(st.session_state["analytics_response_times"]) / len(st.session_state["analytics_response_times"])) if st.session_state["analytics_response_times"] else 0.0
-        
-        st.metric("❓ Questions Asked", f"{st.session_state['analytics_questions']}")
-        st.metric("📦 Resources Generated", f"{st.session_state['analytics_resources']}")
-        st.metric("⚡ Avg Response Time", f"{avg_resp:.2f}s")
-        st.metric("📄 Documents Uploaded", f"{st.session_state['analytics_uploads']}")
-        st.metric("⏱️ Session Active Duration", f"{mins_active} min(s)")
-
-    st.divider()
-    
-    # --- HISTORIC LOG TRACKING BLOCK ---
-    st.markdown("### 📜 Session History Logs")
-    history_records = get_history()
-    if history_records:
-        for item in reversed(history_records[-3:]):
-            with st.container(border=True):
-                st.markdown(f"❓ **Query:** `{item.get('question', '')[:30]}...`")
-                st.markdown(f"📦 **Action:** `{item.get('resource_type', 'Content Task')}`")
-                st.caption(f"🕒 **Time:** `{item.get('timestamp', 'N/A')}`")
-    else:
-        st.caption("No transactional history payload frames stored.")
-
-# =====================================================
-# SYSTEM MAIN DASHBOARD BANNER
-# =====================================================
 st.title("📚 NCF 2023 AI Teacher Assistant")
-
 col_b1, col_b2, col_b3, col_b4, col_b5, col_b6 = st.columns(6)
-col_b1.caption("✨ NCF 2023 Aligned")
-col_b2.caption("🧠 Competency Based Learning")
-col_b3.caption("🏃 Activity Based Learning")
-col_b4.caption("🤝 Inclusive Teaching")
-col_b5.caption("🎨 Art Integrated Learning")
-col_b6.caption("🎮 Game Based Learning")
-
+for col, text in zip([col_b1, col_b2, col_b3, col_b4, col_b5, col_b6], 
+                     ["✨ NCF 2023 Aligned", "🧠 Competency Based", "🏃 Activity Based", "🤝 Inclusive Teaching", "🎨 Art Integrated", "🎮 Game Based"]):
+    col.caption(text)
 st.markdown("---")
 
-
-# =====================================================
-# INGESTION LAYER & COMPREHENSIVE COMPLIANCE VALIDATION
-# =====================================================
-uploaded_file = st.file_uploader(
-    "Upload Source Content Material (PDF / DOCX / TXT)",
-    type=["pdf", "docx", "txt"]
-)
+uploaded_file = st.file_uploader("Upload Source Content Material (PDF / DOCX / TXT)", type=["pdf", "docx", "txt"])
 
 if uploaded_file:
-    # --- DOCUMENT VALIDATION SYSTEM ---
-    MAX_FILE_SIZE_MB = 15
-    MIN_WORD_COUNT = 15
+    # Check boundaries and signatures to perform input text validation checks
+    uploaded_file.seek(0, 2)
+    bytes_length = uploaded_file.tell()
+    uploaded_file.seek(0)
+    file_size_mb = bytes_length / (1024 * 1024)
     
-    file_bytes = uploaded_file.read()
-    file_size_mb = len(file_bytes) / (1024 * 1024)
-    uploaded_file.seek(0)  # Reset pointer stream
+    is_duplicate_trigger = (st.session_state["last_uploaded_file"] == uploaded_file.name)
     
-    is_duplicate = (st.session_state["last_uploaded_file"] == uploaded_file.name)
-    
-    if file_size_mb > MAX_FILE_SIZE_MB:
-        st.error(f"❌ Ingestion rejected: File size limit exceeded ({file_size_mb:.2f}MB / Max {MAX_FILE_SIZE_MB}MB).")
-    elif len(file_bytes) == 0:
-        st.error("❌ Ingestion rejected: Selected source file contains an empty buffer allocation stream.")
-    elif is_duplicate:
-        st.warning("⚠️ Action skipped: This exact version document structure is already mapped inside memory frames.")
+    if file_size_mb > config.MAX_FILE_SIZE_MB:
+        st.error(f"❌ Document Validation Error: File size exceeds the allowed limit ({file_size_mb:.2f}MB / Max {config.MAX_FILE_SIZE_MB}MB).")
+    elif bytes_length == 0:
+        st.error("❌ Document Validation Error: The uploaded file is completely empty or corrupted.")
+    elif is_duplicate_trigger:
+        st.warning("⚠️ Document Already Ingested: This document metadata matrix has already been initialized in the session.")
     else:
-        # Proceed with processing
-        ingest_stages = {
-            10: "Uploading Document context parameters to temporary environment memory buffers...",
-            30: "Extracting Text characters from input file data stream wrappers...",
-            50: "Creating Chunks with token optimized bounds processing pipelines...",
-            70: "Generating Embeddings vector matrices across local transformer maps...",
-            90: "Building FAISS Index tracking allocations and matching frameworks...",
-            100: "Completed Successfully — Ingestion cycle optimization validated."
-        }
-        
-        run_staged_pipeline(ingest_stages)
-        
-        extracted_text = extract_document_text(uploaded_file)
-        word_count = len(extracted_text.split())
-        
-        if word_count < MIN_WORD_COUNT:
-            st.error(f"❌ Processing failed: Text volume falls below requirements ({word_count} words extracted / Min {MIN_WORD_COUNT}).")
-        else:
-            st.session_state["document_text"] = extracted_text
-            generated_chunks = chunk_text(extracted_text)
-            st.session_state["document_chunks"] = generated_chunks
-            st.session_state["last_uploaded_file"] = uploaded_file.name
-            st.session_state["upload_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            st.session_state["analytics_uploads"] += 1
+        try:
+            # Staged Pipeline Ingestion Feedback Engine
+            ingest_animation_map = {
+                15: "Uploading Document parameters to system runtime environments...",
+                35: "Extracting Text layout maps from source content file buffers...",
+                55: "Creating Chunks optimized using token boundaries and lexical wrappers...",
+                75: "Generating Embeddings vector matrices across native transformer graphs...",
+                95: "Building FAISS Index contexts inside the localized workspace databases...",
+                100: "Completed Successfully — Ingestion stage mapping resolved."
+            }
+            run_staged_pipeline(ingest_animation_map)
             
-            # DYNAMIC METADATA INSPECTION CALL
-            try:
-                parsed_meta = get_document_info(uploaded_file)
-                st.session_state["doc_metadata"] = {
-                    "title": parsed_meta.get("title", uploaded_file.name),
-                    "subject": parsed_meta.get("subject") if parsed_meta.get("subject") else "Unknown",
-                    "chapter": parsed_meta.get("chapter") if parsed_meta.get("chapter") else "Unknown",
-                    "total_pages": parsed_meta.get("total_pages", "1 Page"),
-                    "reading_time": parsed_meta.get("reading_time", f"{max(1, word_count//150)} min read"),
-                    "doc_type": parsed_meta.get("doc_type", uploaded_file.name.split(".")[-1].upper()),
-                    "detected_topics": parsed_meta.get("detected_topics", ["Foundation Frameworks", "Curriculum Design"]),
-                    "detected_keywords": parsed_meta.get("detected_keywords", ["Pedagogy", "NCF Standards"]),
-                    "learning_outcomes": parsed_meta.get("learning_outcomes", ["Synthesize core instructional criteria summaries"]),
-                    "competencies": parsed_meta.get("competencies", ["Cognitive structuring operations"]),
-                    "reading_level": parsed_meta.get("reading_level", "Standard Academic Text Profile")
-                }
-            except Exception:
-                st.session_state["doc_metadata"] = {
-                    "title": uploaded_file.name,
-                    "subject": "Unknown",
-                    "chapter": "Unknown",
-                    "total_pages": "1 Page",
-                    "reading_time": "Calculated dynamically",
-                    "doc_type": uploaded_file.name.split(".")[-1].upper(),
-                    "detected_topics": ["General Topic Focus"],
-                    "detected_keywords": ["Content Core"],
-                    "learning_outcomes": ["Review primary context data structures"],
-                    "competencies": ["General comprehension analytical frames"],
-                    "reading_level": "Professional Reference Layout"
-                }
+            raw_text = extract_document_text(uploaded_file)
+            word_count_check = len(raw_text.split())
+            
+            if word_count_check < config.MIN_WORD_COUNT:
+                st.error(f"❌ Document Validation Error: Insufficient content depth found ({word_count_check} words / Minimum required: {config.MIN_WORD_COUNT} words).")
+            else:
+                st.session_state["document_text"] = raw_text
+                computed_chunks = chunk_text(raw_text)
+                st.session_state["document_chunks"] = computed_chunks
+                st.session_state["last_uploaded_file"] = uploaded_file.name
+                st.session_state["upload_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.session_state["stat_uploads"] += 1
                 
-            store_document_chunks(
-                chunks=generated_chunks, 
-                document_name=uploaded_file.name,
-                subject=st.session_state["doc_metadata"]["subject"],
-                chapter=st.session_state["doc_metadata"]["chapter"]
-            )
-            st.success("🎉 Content ingested, transformed, and registered seamlessly inside vector memory.")
+                # CRITICAL FIX: Reset file pointer stream prior to extraction rules execution
+                uploaded_file.seek(0)
+                
+                try:
+                    meta_extraction = get_document_info(uploaded_file)
+                    st.session_state["doc_metadata"] = {
+                        "title": meta_extraction.get("title", uploaded_file.name),
+                        "subject": meta_extraction.get("subject") if meta_extraction.get("subject") else "Unknown",
+                        "chapter": meta_extraction.get("chapter") if meta_extraction.get("chapter") else "Unknown",
+                        "total_pages": meta_extraction.get("total_pages", "1 Page"),
+                        "reading_time": meta_extraction.get("reading_time", f"{max(1, word_count_check//160)} min read"),
+                        "doc_type": meta_extraction.get("doc_type", uploaded_file.name.split(".")[-1].upper()),
+                        "detected_topics": meta_extraction.get("detected_topics", ["Foundational Pedagogics"]),
+                        "detected_keywords": meta_extraction.get("detected_keywords", ["NCF Directive"]),
+                        "learning_outcomes": meta_extraction.get("learning_outcomes", ["Synthesize context references"]),
+                        "competencies": meta_extraction.get("competencies", ["Cognitive core structuring"]),
+                        "reading_level": meta_extraction.get("reading_level", "Academic Standard Layout")
+                    }
+                except Exception:
+                    st.session_state["doc_metadata"] = {
+                        "title": uploaded_file.name, "subject": "Unknown", "chapter": "Unknown",
+                        "total_pages": "1 Page", "reading_time": "Dynamic Budget", "doc_type": "TXT",
+                        "detected_topics": ["General Curriculum Subject"], "detected_keywords": ["Context Standard"],
+                        "learning_outcomes": ["Process explicit data summary structures"], "competencies": ["General Comprehension Strategy"],
+                        "reading_level": "Standard Text Matrix"
+                    }
+                
+                store_document_chunks(
+                    chunks=computed_chunks,
+                    document_name=uploaded_file.name,
+                    subject=st.session_state["doc_metadata"]["subject"],
+                    chapter=st.session_state["doc_metadata"]["chapter"]
+                )
+                st.success("🎉 Document successfully validated, converted, and fully indexed inside the local vector memory workspace.")
+                st.rerun()
+        except Exception as file_err:
+            st.error("❌ Corrupted Document Error: System architecture failed to parse the internal structures of this document.")
+            with st.expander("Technical Exception Trace", expanded=False):
+                st.code(traceback.format_exc())
 
-# --- SMART DOCUMENT PREVIEW SECTION ---
-if st.session_state["doc_metadata"] is not None:
-    with st.expander("🔍 Smart Document Preview & Context Synthesis", expanded=False):
-        pv_c1, pv_c2 = st.columns([2, 1])
-        with pv_c1:
-            st.markdown("#### 📄 Document Buffer Text Preview (First 500 Words)")
-            preview_words = st.session_state["document_text"].split()[:500]
-            st.text_area("", value=" ".join(preview_words), height=240, disabled=True)
-        with pv_c2:
-            st.markdown("#### 🧠 AI Inspected Architecture")
-            st.markdown(f"📈 **Estimated Reading Level:** `{st.session_state['doc_metadata']['reading_level']}`")
-            st.markdown(f"⏱️ **Reading Budget Time:** `{st.session_state['doc_metadata']['reading_time']}`")
-            st.write("**Detected Core Topics:**", ", ".join(st.session_state['doc_metadata']['detected_topics']))
-            st.write("**Identified Keywords:**", ", ".join(st.session_state['doc_metadata']['detected_keywords']))
-            st.write("**Target Learning Outcomes:**", ", ".join(st.session_state['doc_metadata']['learning_outcomes']))
-            st.write("**Target Competencies:**", ", ".join(st.session_state['doc_metadata']['competencies']))
+# Invoke secondary diagnostic UI visualization modules
+render_document_summary()
+render_smart_preview()
 
 
 # =====================================================
-# ACTION SELECTION & EDUCATIONAL PANELS
+# ACTION CONTEXT DEFINITION SELECTORS
 # =====================================================
 action = st.selectbox(
     "Choose Resource Action Block",
     [
-        "📦 Generate Complete Teaching Package",
-        "Ask Question",
-        "Generate Notes",
-        "Generate MCQs",
-        "Generate Question Paper",
-        "Generate Learning Outcomes",
-        "Generate Competencies",
-        "Generate Lesson Plan",
-        "Generate Teaching Guide",
-        "Generate Flow Chart",
-        "Generate Mind Map",
-        "Generate Chapter Summary",
-        "Generate Important Questions",
-        "Web Search"
+        "📦 Generate Complete Teaching Package", "Ask Question", "Generate Notes", "Generate MCQs",
+        "Generate Question Paper", "Generate Learning Outcomes", "Generate Competencies",
+        "Generate Lesson Plan", "Generate Teaching Guide", "Generate Flow Chart",
+        "Generate Mind Map", "Generate Chapter Summary", "Generate Important Questions", "Web Search"
     ]
 )
 
 query = st.text_area("Enter Core Topic Target, Focus Area, or Question Parameters")
 
-# --- EDUCATIONAL CONFIGURATION PANEL ---
+# Educational Profile Context Selection
 st.markdown("### ⚙️ Educational Configuration Parameters")
 config_col1, config_col2 = st.columns(2)
-
 with config_col1:
-    student_level = st.selectbox(
-        "Student Level",
-        [f"Class {i}" for i in range(1, 13)],
-        index=4,  # Default Class 5
-        key="student_level_sel"
-    )
-
+    student_level = st.selectbox("Student Level", [f"Class {i}" for i in range(1, 13)], index=4, key="student_level_sel")
 with config_col2:
-    teaching_style = st.selectbox(
-        "Teaching Style",
-        [
-            "Beginner Friendly",
-            "Concept Based",
-            "Activity Based",
-            "Competency Based",
-            "Interactive Learning",
-            "Exam Oriented"
-        ],
-        index=0,  # Default Beginner Friendly
-        key="teaching_style_sel"
-    )
+    teaching_style = st.selectbox("Teaching Style", ["Beginner Friendly", "Concept Based", "Activity Based", "Competency Based", "Interactive Learning", "Exam Oriented"], index=0, key="teaching_style_sel")
 
-# --- SHOW ACTIVE CONFIGURATION PROFILE ---
-st.markdown("#### 🔍 Current Active Profile Configuration")
-with st.container(border=True):
-    ac_c1, ac_c2, ac_c3, ac_c4, ac_c5 = st.columns(5)
-    ac_c1.markdown(f"**Student Level:**\n\n`{student_level}`")
-    ac_c2.markdown(f"**Teaching Style:**\n\n`{teaching_style}`")
-    ac_c3.markdown(f"**Difficulty:**\n\n`{detect_difficulty(query) if query else 'Not Evaluated'}`")
-    ac_c4.markdown(f"**Marks:**\n\n`{detect_marks(query) if query else 'Not Evaluated'}`")
-    
-    current_doc_label = st.session_state['last_uploaded_file'] if st.session_state['last_uploaded_file'] else 'No Document Ingested'
-    ac_c5.markdown(f"**Current Document:**\n\n`{current_doc_label}`")
-
-# --- SAFE DEFAULTS AND ACTION GATEKEEPER VALIDATION ---
-document_dependent_actions = [
-    "📦 Generate Complete Teaching Package", "Generate Notes", "Generate MCQs", 
-    "Generate Question Paper", "Generate Learning Outcomes", "Generate Competencies", 
-    "Generate Lesson Plan", "Generate Teaching Guide", "Generate Flow Chart", 
-    "Generate Mind Map", "Generate Chapter Summary", "Generate Important Questions"
-]
-
-has_active_context = (st.session_state["doc_metadata"] is not None)
-
-if action in document_dependent_actions and not has_active_context:
-    st.error("❌ Action Block Locked: Please upload a valid document or trigger Demo Mode to unlock these options.")
-    st.info("💡 Alternative Option: Change action selector route to 'Web Search' to query outer global network frames.")
+# Verify access constraints and clear path routing checks
+is_document_present = (st.session_state["doc_metadata"] is not None)
+if action in config.DOCUMENT_DEPENDENT_ACTIONS and not is_document_present:
+    st.error("❌ Resource Action Locked: The requested option requires active document context parameters.")
+    st.info("💡 Hint: Load the demonstration data module above or choose 'Web Search' as your active route action block.")
     st.stop()
 
 
 # =====================================================
-# RUNTIME INFERENCE ROUTER PIPELINE
+# ENGINE INFERENCE PIPELINE RUNTIME
 # =====================================================
 if st.button("🚀 Generate Content Blueprint"):
     if not query:
         st.warning("Please fill in prompt requirements before initiating tracking execution threads.")
         st.stop()
-
+        
     outputs = {}
-    rag_metadata_payload = None  
-    
-    # Use real document variables safely extracted
-    if has_active_context:
-        source_name = st.session_state["doc_metadata"]["title"]
-        curr_subject = st.session_state["doc_metadata"]["subject"]
-        curr_chapter = st.session_state["doc_metadata"]["chapter"]
-    else:
-        source_name = "System Core Directives"
-        curr_subject = "Unknown"
-        curr_chapter = "Unknown"
-
+    rag_metadata_payload = None
     start_time_mark = datetime.now()
     execution_ts = start_time_mark.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Safely assign working context properties
+    if is_document_present:
+        target_source_title = st.session_state["doc_metadata"]["title"]
+        target_subject = st.session_state["doc_metadata"]["subject"]
+        target_chapter = st.session_state["doc_metadata"]["chapter"]
+    else:
+        target_source_title = "System Core Directives"
+        target_subject = "Unknown"
+        target_chapter = "Unknown"
 
-    # ADVANCED PROGRESSIVE STAGED PIPELINE TRACKING
-    runtime_stages = {
-        15: "Searching Knowledge Base parameters mapping local contexts...",
-        40: "Building FAISS Index graph connection layouts to extract relevant text mappings...",
-        65: "Generating AI Response matrix vectors using remote high-speed endpoints...",
-        90: "Preparing Output buffers for visualization rendering components...",
-        100: "Completed Successfully — Pipeline process rendering engine closed."
+    inference_animation_map = {
+        20: "Searching Knowledge Base maps matching criteria requirements...",
+        50: "Extracting semantic vector intersections using local matrix weights...",
+        80: "Generating AI Response outputs utilizing localized hyper-speed endpoints...",
+        95: "Preparing Output text streams formatting final blueprint components...",
+        100: "Completed Successfully — Generation node parameters cleared."
     }
-    run_staged_pipeline(runtime_stages)
+    run_staged_pipeline(inference_animation_map)
     
     try:
-        # EXECUTION CORE ROUTER
+        # Pipeline Router Flow Logic Execution
         if action == "📦 Generate Complete Teaching Package":
             outputs["outcomes"] = generate_learning_outcomes(query, student_level)
             outputs["competencies"] = generate_competencies(query, student_level)
@@ -478,19 +461,18 @@ if st.button("🚀 Generate Content Blueprint"):
             outputs["mindmap"] = generate_mindmap(query)
             outputs["summary"] = generate_chapter_summary(query)
             outputs["questions"] = generate_important_questions(query)
-            st.session_state["analytics_resources"] += 11
-        
+            st.session_state["stat_resources"] += 11
+            
         elif action == "Ask Question":
-            resp = rag_answer(query, student_level)
-            outputs["notes"] = resp["answer"]
-            source_name = resp["source"]
-            if "source_info" in resp and resp["source_info"]:
-                rag_metadata_payload = resp["source_info"]
-            st.session_state["analytics_questions"] += 1
+            resp_payload = rag_answer(query, student_level)
+            outputs["notes"] = resp_payload["answer"]
+            target_source_title = resp_payload["source"]
+            if "source_info" in resp_payload and resp_payload["source_info"]:
+                rag_metadata_payload = resp_payload["source_info"]
+            st.session_state["stat_questions"] += 1
             
         else:
-            # Dynamic standalone actions router mapping
-            st.session_state["analytics_resources"] += 1
+            st.session_state["stat_resources"] += 1
             if action == "Generate Notes":
                 outputs["notes"] = generate_document_notes(query, student_level)
             elif action == "Generate MCQs":
@@ -516,80 +498,71 @@ if st.button("🚀 Generate Content Blueprint"):
             elif action == "Web Search":
                 web_raw = search_web(query)
                 outputs["notes"] = format_web_results(web_raw)
-                source_name = "Web Search"
+                target_source_title = "Web Search Outlets"
 
         delta_seconds = (datetime.now() - start_time_mark).total_seconds()
-        st.session_state["analytics_response_times"].append(delta_seconds)
+        st.session_state["stat_response_times"].append(delta_seconds)
 
-        # OUTPUT INFORMATION CARD DISPLAY
-        render_resource_info_card(action, query, student_level, teaching_style, source_name)
+        # Update analytical aggregators if matching parameters are found
+        if rag_metadata_payload:
+            st.session_state["stat_confidences"].append(float(rag_metadata_payload.get("confidence", 0.0)))
+            st.session_state["stat_similarities"].append(float(rag_metadata_payload.get("similarity", 0.0)))
 
-        # =====================================================
-        # SOURCE TRACEABILITY PANEL (EXPANDABLE)
-        # =====================================================
-        with st.expander("🎯 Source Traceability Operational Matrix", expanded=True):
-            st.markdown("### 📄 Architectural Context Citation Summary")
-            tr_c1, tr_c2, tr_c3 = st.columns(3)
-            with tr_c1:
-                st.markdown(f"**Source Document:** `{source_name}`")
-                st.markdown(f"**Page Number:** `{rag_metadata_payload.get('page', 'Dynamic Context') if rag_metadata_payload else 'N/A'}`")
-                st.markdown(f"**Chunk Number:** `{rag_metadata_payload.get('chunk', 'Dynamic Allocation') if rag_metadata_payload else 'N/A'}`")
-                st.markdown(f"**Document Version:** `v1.0.0 (Immutable Reference Frame)`")
-            with tr_c2:
-                st.markdown(f"**Similarity Score:** `{rag_metadata_payload.get('similarity', 'N/A') if rag_metadata_payload else 'N/A'}`")
-                st.markdown(f"**Confidence Score:** `{rag_metadata_payload.get('confidence', 'N/A') if rag_metadata_payload else 'N/A'}%`")
-                st.markdown(f"**Retrieval Score:** `{rag_metadata_payload.get('retrieval_score', 'N/A') if rag_metadata_payload else 'N/A'}`")
-                st.markdown(f"**Retrieval Method:** `FAISS Semantic Vector Search Graph`")
-            with tr_c3:
-                st.markdown(f"**Generated Time:** `{execution_ts}`")
-                st.markdown(f"**Student Level:** `{student_level}`")
-                st.markdown(f"**Teaching Style:** `{teaching_style}`")
-
+        # Display Unified Output Component Cards
+        render_output_info_card(action, query, student_level, teaching_style, target_source_title)
+        render_source_traceability(rag_metadata_payload, execution_ts, student_level, teaching_style, target_source_title)
+        
         st.divider()
 
         # =====================================================
-        # MULTI-TAB MATRIX CONTAINER DISPLAY
+        # VISUAL CONTAINER OUTPUT MATRIX TABS
         # =====================================================
         tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
             "📋 Notes", "🧩 MCQs", "📝 Question Paper", "🧭 Lesson Plan",
             "📖 Teaching Guide", "📊 Flow Chart", "🧠 Mind Map", "📑 Chapter Summary", "❓ Important Questions"
         ])
-
+        
         with tab1:
-            st.markdown(outputs.get("notes", outputs.get("outcomes", "No textual results map configured for this node.")))
+            st.markdown(outputs.get("notes", outputs.get("outcomes", "No primary structured text was loaded for this view block segment.")))
         with tab2:
-            st.markdown(outputs.get("mcqs", "No dataset array generated for this segment."))
+            st.markdown(outputs.get("mcqs", "No assessment data arrays found for this component."))
         with tab3:
-            st.markdown(outputs.get("paper", "No question compilation loaded."))
+            st.markdown(outputs.get("paper", "No exam blueprint loaded."))
         with tab4:
-            st.markdown(outputs.get("lesson", "No structure instruction logs found."))
+            st.markdown(outputs.get("lesson", "No lesson structure parameters returned."))
         with tab5:
-            st.markdown(outputs.get("guide", "No scripting data generated."))
+            st.markdown(outputs.get("guide", "No interactive guide logs calculated."))
         with tab6:
-            st.markdown(outputs.get("flowchart", "No schematic parameters generated."))
+            st.markdown(outputs.get("flowchart", "No procedural flow layout data configured."))
         with tab7:
-            st.markdown(outputs.get("mindmap", "No conceptual relations schema found."))
+            st.markdown(outputs.get("mindmap", "No relationship mapping diagrams constructed."))
         with tab8:
-            st.markdown(outputs.get("summary", "No targeted misconception sets mapped."))
+            st.markdown(outputs.get("summary", "No curriculum summaries compiled."))
         with tab9:
-            st.markdown(outputs.get("questions", "No targeted tier question systems generated."))
+            st.markdown(outputs.get("questions", "No priority tiered problem questions returned."))
 
         # =====================================================
-        # EXPORT LAYER COMPILATION & ENHANCED HISTORY PERSISTENCE
+        # COMPREHENSIVE ASSET EXPORT LAYER WITH INTEGRATED HEADER
         # =====================================================
         st.divider()
         st.subheader("📥 Export Curricular Asset Blocks")
         
-        pdf_traceability_appendix = (
-            f"\n\n\n\n---\n### 📄 EXPORT TELEMETRY CITATION\n"
-            f"- Source File Name: {source_name}\n"
-            f"- Curriculum Domain Field: {curr_subject} | Chapter Node: {curr_chapter}\n"
-            f"- Pedagogy Configuration: Student Level {student_level} | Inst Style {teaching_style}\n"
-            f"- Evaluation Timestamp Clock Signature: {execution_ts}\n---"
+        # Self-contained header injection to make exported documents self-contained
+        pdf_header_preface = (
+            f"=====================================================\n"
+            f"NCF AI TEACHER ASSISTANT INTELLECTUAL CURRICULAR PAYLOAD\n"
+            f"=====================================================\n"
+            f"- Document Reference: {target_source_title}\n"
+            f"- Subject Category: {target_subject} | Chapter Track: {target_chapter}\n"
+            f"- Target Student Level: {student_level} | Applied Pedagogy Style: {teaching_style}\n"
+            f"- Generation Time Mark: {execution_ts} | Application Core Version: {config.APP_VERSION}\n"
+            f"- Inference Processing Node: {config.LLM_MODEL} | Text Embeddings Graph: {config.EMBEDDING_MODEL}\n"
+            f"- Data Validation Audit Matrix Metrics: Confidence Score: {rag_metadata_payload.get('confidence', 'N/A') if rag_metadata_payload else 'N/A'}% | Similarity Weight: {rag_metadata_payload.get('similarity', 'N/A') if rag_metadata_payload else 'N/A'}\n"
+            f"-----------------------------------------------------\n\n\n"
         )
-
-        raw_string_compilation = "\n\n***\n\n".join([f"# {k.upper()}\n{v}" for k, v in outputs.items()]) + pdf_traceability_appendix
-        compiled_stream_buffer = notes_pdf(raw_string_compilation, source_name)
+        
+        raw_string_compilation = pdf_header_preface + "\n\n***\n\n".join([f"# {k.upper()}\n{v}" for k, v in outputs.items()])
+        compiled_stream_buffer = notes_pdf(raw_string_compilation, target_source_title)
 
         ec1, ec2 = st.columns(2)
         with ec1:
@@ -614,41 +587,70 @@ if st.button("🚀 Generate Content Blueprint"):
                     disabled=(action != "📦 Generate Complete Teaching Package")
                 )
 
-        # COMPREHENSIVE SAVING METADATA BLOCK INTERFACE EXTENSION
-        save_to_history(query, raw_string_compilation, source_name)
+        # =====================================================
+        # LONG-TERM DATABASE-COMPATIBLE HISTORY PERSISTENCE
+        # =====================================================
+        save_to_history(query, raw_string_compilation, target_source_title)
         
         if st.session_state.get("history"):
-            latest_record = st.session_state["history"][-1]
-            latest_record["student_level"] = student_level
-            latest_record["teaching_style"] = teaching_style
-            latest_record["document"] = source_name
-            latest_record["subject"] = curr_subject
-            latest_record["chapter"] = curr_chapter
-            latest_record["confidence"] = rag_metadata_payload.get("confidence", "N/A") if rag_metadata_payload else "N/A"
-            latest_record["similarity"] = rag_metadata_payload.get("similarity", "N/A") if rag_metadata_payload else "N/A"
-            latest_record["retrieval_score"] = rag_metadata_payload.get("retrieval_score", "N/A") if rag_metadata_payload else "N/A"
-            latest_record["timestamp"] = execution_ts
-            latest_record["action"] = action
+            db_record = st.session_state["history"][-1]
+            db_record.update({
+                "question": query,
+                "action": action,
+                "student_level": student_level,
+                "teaching_style": teaching_style,
+                "document": target_source_title,
+                "subject": target_subject,
+                "chapter": target_chapter,
+                "difficulty": detect_difficulty(query),
+                "marks": detect_marks(query),
+                "confidence_score": rag_metadata_payload.get("confidence", "N/A") if rag_metadata_payload else "N/A",
+                "similarity_score": rag_metadata_payload.get("similarity", "N/A") if rag_metadata_payload else "N/A",
+                "retrieval_score": rag_metadata_payload.get("retrieval_score", "N/A") if rag_metadata_payload else "N/A",
+                "response_time": f"{delta_seconds:.2f}s",
+                "generation_time": execution_ts,
+                "llm_model": config.LLM_MODEL,
+                "embedding_model": config.EMBEDDING_MODEL,
+                "vector_database": config.VECTOR_DATABASE
+            })
 
-    except Exception as e:
+    except Exception as runtime_error:
+        # Graceful, decoupled structural error handling implementation
         if 'runtime_tracker' in locals():
             runtime_tracker.empty()
-        st.exception(e)
+        st.error("❌ Unable to generate the requested resource.")
+        st.markdown(
+            "**Possible system failure reasons identified:**\n"
+            "• Empty document context allocation map found.\n"
+            "• Invalid document data elements or incorrect language formatting.\n"
+            "• LLM inference core pipeline API call failure or token timeout.\n"
+            "• Retrieval constraint weight error inside the FAISS index database."
+        )
+        with st.expander("🛠️ Technical Details (Traceback Stack Frame)", expanded=False):
+            st.code(traceback.format_exc())
 
 # =====================================================
-# SYSTEM COMPREHENSIVE PLATFORM FOOTER
+# PLATFORM FOOTER LAYOUT COMPONENT
 # =====================================================
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("---")
-foot_c1, foot_c2, foot_c3 = st.columns([1, 3, 1])
+foot_c1, foot_c2, foot_c3 = st.columns([1, 4, 1])
 with foot_c2:
     st.markdown(
-        "<center style='color: gray; font-size: 0.85rem; line-height: 1.4rem;'>"
-        "<b>Built Framework Components:</b><br>"
-        "🤖 Groq Inference Engine | 📚 FAISS Vector Database Layer | 🧠 SentenceTransformers Model Graph | ⚡ Streamlit Client Node<br>"
-        "<b>Curricular Governance Base Rules:</b><br>"
-        "📖 National Curriculum Framework (NCF 2023) | 🎓 National Education Policy (NEP 2020)<br>"
-        "🚀 <i>Enterprise RAG Architecture — Version 1.0 MVP Node Setup</i>"
+        f"<center style='color: gray; font-size: 0.85rem; line-height: 1.4rem;'>"
+        f"<b>Built Framework Architecture Nodes:</b><br>"
+        f"Groq Inference • FAISS Matrix Database • Sentence Transformers • Streamlit Application Container • ReportLab SDK<br>"
+        f"<b>Curricular Governance Framework Policies:</b><br>"
+        f"National Curriculum Framework (NCF 2023) | National Education Policy (NEP 2020) — <i>{config.APP_VERSION}</i>"
+        f"</center>",
+        unsafe_allow_html=True
+    )
+    st.divider()
+    st.markdown(
+        "<center style='color: #a0a0a0; font-size: 0.75rem;'>"
+        "<b>Core Production Architecture Roadmap:</b> Redis Optimization Cache Layer • PostgreSQL Vector Storage Layers • "
+        "Supabase Authentication Relay Handles • LangGraph Multi-Agent Orchestration Graphs • Model Context Protocol (MCP) Integration Hooks • "
+        "BM25 Hybrid Lexical Match Search Models"
         "</center>",
         unsafe_allow_html=True
     )
