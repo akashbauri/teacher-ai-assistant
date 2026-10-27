@@ -6,6 +6,10 @@ from datetime import datetime
 # Centralized Configurations
 import config
 
+# Active Groq model override.
+# Other modules imported below can read this value from the shared config module.
+config.LLM_MODEL = "qwen/qwen3.8-27b"
+
 # Document Processing
 from document_parser import (
     extract_document_text,
@@ -403,9 +407,26 @@ query = st.text_area("Enter Core Topic Target, Focus Area, or Question Parameter
 st.markdown("### ⚙️ Educational Configuration Parameters")
 config_col1, config_col2 = st.columns(2)
 with config_col1:
-    student_level = st.selectbox("Student Level", [f"Class {i}" for i in range(1, 13)], index=4, key="student_level_sel")
+    # The default is initialized in st.session_state above. Do not also pass index=,
+    # because Streamlit warns when a keyed widget's value is set through Session State.
+    student_level = st.selectbox(
+        "Student Level",
+        [f"Class {i}" for i in range(1, 13)],
+        key="student_level_sel",
+    )
 with config_col2:
-    teaching_style = st.selectbox("Teaching Style", ["Beginner Friendly", "Concept Based", "Activity Based", "Competency Based", "Interactive Learning", "Exam Oriented"], index=0, key="teaching_style_sel")
+    teaching_style = st.selectbox(
+        "Teaching Style",
+        [
+            "Beginner Friendly",
+            "Concept Based",
+            "Activity Based",
+            "Competency Based",
+            "Interactive Learning",
+            "Exam Oriented",
+        ],
+        key="teaching_style_sel",
+    )
 
 # Verify access constraints and clear path routing checks
 is_document_present = (st.session_state["doc_metadata"] is not None)
