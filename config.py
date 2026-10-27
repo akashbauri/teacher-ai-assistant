@@ -25,7 +25,7 @@ TAVILY_API_KEY = get_env("TAVILY_API_KEY")
 # =====================================================
 APP_VERSION = "Version 1.0 MVP"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2 (384D)"
-LLM_MODEL = "Llama-3.3-Groq Engine"
+LLM_MODEL = "qwen/qwen3.8-27b"
 VECTOR_DATABASE = "FAISS (FlatL2 Memory Local)"
 
 # Validation Rules
